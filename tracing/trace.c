@@ -8,8 +8,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "stm32f4xx.h"
-
-#define OS_INTEGER_TRACE_PRINTF_TMP_ARRAY_SIZE (128)
+#include "trace.h"
 
 void trace_init(void)
 {
@@ -32,12 +31,12 @@ static ssize_t trace_write (const char* buf, size_t nbyte)
 
 int trace_printf(const char* format, ...)
 {
+  static char buf[TRACE_BUFF];
   int ret;
   va_list ap;
 
   va_start (ap, format);
 
-  static char buf[OS_INTEGER_TRACE_PRINTF_TMP_ARRAY_SIZE];
 
   // Print to the local buffer
   ret = vsnprintf (buf, sizeof(buf), format, ap);

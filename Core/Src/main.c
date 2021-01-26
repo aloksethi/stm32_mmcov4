@@ -22,90 +22,30 @@
 #include "cmsis_os.h"
 #include "lwip.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
-
 SPI_HandleTypeDef hspi1;
-
 UART_HandleTypeDef huart3;
-
 WWDG_HandleTypeDef hwwdg;
 
-osThreadId led_flashHandle;
-uint32_t led_flashBuffer[ 128 ];
-osStaticThreadDef_t led_flashControlBlock;
-osThreadId mlab_handlerHandle;
-uint32_t myTask02Buffer[ 128 ];
-osStaticThreadDef_t myTask02ControlBlock;
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
+static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_WWDG_Init(void);
-void StartDefaultTask(void const * argument);
-void StartTask02(void const * argument);
 
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-void trace_init(void);
 
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
+  trace_init();
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -114,60 +54,28 @@ int main(void)
   MX_USART3_UART_Init();
  // MX_WWDG_Init();
 
-  trace_init();
-  /* USER CODE BEGIN 2 */
+  MX_LWIP_Init();
 
-  /* USER CODE END 2 */
+  vStartLEDFlashTasks( LED_FLASH_TASK_PRIORITY );
+  vStartMlabHandlerTask( MATLAB_HANLDER_TASK_PRIORITY );
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of led_flash */
-  osThreadStaticDef(led_flash, StartDefaultTask, osPriorityNormal, 0, 128, led_flashBuffer, &led_flashControlBlock);
-  led_flashHandle = osThreadCreate(osThread(led_flash), NULL);
-
-  /* definition and creation of mlab_handler */
-  osThreadStaticDef(mlab_handler, StartTask02, osPriorityIdle, 0, 128, myTask02Buffer, &myTask02ControlBlock);
-  mlab_handlerHandle = osThreadCreate(osThread(mlab_handler), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
+
 }
 
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
+static void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -376,18 +284,18 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(EN_SUP_4_GPIO_Port, EN_SUP_4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(EN_SUP_4_Port, EN_SUP_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12
-                          |LD3_Pin|GPIO_PIN_15|GPIO_PIN_4|LD2_Pin
+                          |LED_RED_Pin|GPIO_PIN_15|GPIO_PIN_4|LED_BLUE_Pin|LED_GREEN_Pin
                           |GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|LD1_Pin
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
                           |GPIO_PIN_10|GPIO_PIN_11, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PE2 PE3 PE4 PE5
@@ -444,7 +352,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EN_SUP_4_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(EN_SUP_4_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB0 PB2 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2;
@@ -453,10 +361,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB1 PB10 PB11 PB12
-                           LD3_Pin PB15 PB4 LD2_Pin
+                           LD3_Pin PB15 PB4 LED_BLUE_Pin
                            PB8 */
   GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12
-                          |LD3_Pin|GPIO_PIN_15|GPIO_PIN_4|LD2_Pin
+                          |LED_RED_Pin|GPIO_PIN_15|GPIO_PIN_4|LED_BLUE_Pin|LED_GREEN_Pin
                           |GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -506,7 +414,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PC6 PC7 PC8 LD1_Pin
                            PC10 PC11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|LD1_Pin
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
                           |GPIO_PIN_10|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -527,50 +435,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
 
-}
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the led_flash thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-int trace_printf(const char* format, ...);
-void StartDefaultTask(void const * argument)
-{
-  /* init code for LWIP */
-  MX_LWIP_Init();
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-    trace_printf("DEADBEAF\n");
-  }
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_StartTask02 */
-/**
-* @brief Function implementing the mlab_handler thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void const * argument)
-{
-  /* USER CODE BEGIN StartTask02 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartTask02 */
 }
 
  /**
