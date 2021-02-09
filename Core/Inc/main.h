@@ -16,6 +16,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 
 #include "stm32f4xx_hal.h"
 
@@ -23,7 +24,8 @@ extern "C" {
 #include "trace.h"
 #include "heartbeat.h"
 #include "mlab_handler.h"
-
+#include "prog_chip_reg.h"
+#include "mlab_nucleo_if.h"
 
 #define MATLAB_HANLDER_TASK_PRIORITY		(tskIDLE_PRIORITY + 2UL)  //-->talking with matlab
 #define SENSOR_MONITOR_TASK_PRIORITY		(tskIDLE_PRIORITY + 3UL)  //-->monitoring sensors and turning off in case limits go over
@@ -38,6 +40,11 @@ extern "C" {
 #define SENSOR_STACK_SIZE					(3 * configMINIMAL_STACK_SIZE)
 #define POT_STACK_SIZE						(2 * configMINIMAL_STACK_SIZE)
 
+
+extern TaskHandle_t				g_handle_mlab_task;
+extern TaskHandle_t				g_handle_chip_reg_task;
+
+extern QueueHandle_t 			g_pc_queue_handle;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);

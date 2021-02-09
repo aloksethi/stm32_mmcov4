@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdio.h>
 #include "main.h"
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
@@ -86,8 +87,18 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-  /* USER CODE BEGIN HardFault_IRQn 0 */
+	static char msg[80];
+	   trace_printf("In Hard Fault Handler\n");
+	   sprintf(msg, "SCB->HFSR = 0x%08lx\n", SCB->HFSR);
+	   trace_printf(msg);
 
+	   if ((SCB->HFSR & (1 << 30)) != 0) {
+		   trace_printf("Forced Hard Fault\n");
+	          sprintf(msg, "SCB->CFSR = 0x%08lx\n", SCB->CFSR );
+	          trace_printf(msg);
+	      }
+
+	   __ASM volatile("BKPT #01");
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

@@ -8,6 +8,8 @@
 #ifndef INC_BOARD_H_
 #define INC_BOARD_H_
 
+#define CHIP_CLK_DELAY		20000
+
 #define EN_SUP_4_Pin 		GPIO_PIN_3
 #define EN_SUP_4_Port 		GPIOA
 
@@ -18,14 +20,23 @@
 #define LED_BLUE_Pin 		GPIO_PIN_7
 #define LED_BLUE_Port 		GPIOB
 
+#define IC_CLK_Pin					GPIO_PIN_8
+#define IC_CLK_Port					GPIOC
+#define IC_DATA_Pin					GPIO_PIN_8
+#define IC_DATA_Port				GPIOB
+#define IC1_LE_Pin					GPIO_PIN_6
+#define IC1_LE_Port					GPIOC
+#define IC2_LE_Pin					GPIO_PIN_12
+#define IC2_LE_Port					GPIOB
 
-#define USER_Btn_Pin GPIO_PIN_13
-#define USER_Btn_GPIO_Port GPIOC
-#define MCO_Pin GPIO_PIN_0
-#define MCO_GPIO_Port GPIOH
-#define RMII_MDC_Pin GPIO_PIN_1
-#define RMII_MDC_GPIO_Port GPIOC
-#define RMII_REF_CLK_Pin GPIO_PIN_1
+
+#define USER_Btn_Pin 				GPIO_PIN_13
+#define USER_Btn_GPIO_Port 			GPIOC
+#define MCO_Pin 					GPIO_PIN_0
+#define MCO_GPIO_Port 				GPIOH
+#define RMII_MDC_Pin 				GPIO_PIN_1
+#define RMII_MDC_GPIO_Port 			GPIOC
+#define RMII_REF_CLK_Pin 			GPIO_PIN_1
 #define RMII_REF_CLK_GPIO_Port GPIOA
 #define RMII_MDIO_Pin GPIO_PIN_2
 #define RMII_MDIO_GPIO_Port GPIOA
@@ -68,8 +79,12 @@
 void board_red_led_toggle(void);
 void board_green_led_toggle(void);
 void board_blue_led_toggle(void);
+
 void board_set_reg_data(uint8_t);
 void board_send_reg_clock(void);
-void board_set_le(void);
+void board_send_le_ic1(void);
+void board_send_le_ic2(void);
+
+void board_init(void);
 
 #endif /* INC_BOARD_H_ */

@@ -28,15 +28,15 @@ static portTASK_FUNCTION( vLEDFlashTask, pvParameters )
 
 	for(;;)
 	{
-		uint8_t reg = 0;
+
 		vTaskDelayUntil( &xLastFlashTime, xFlashRate );
-		board_red_led_toggle();
-		board_blue_led_toggle();
+		//board_red_led_toggle();
+		//board_blue_led_toggle();
 		board_green_led_toggle();
 		vTaskDelayUntil( &xLastFlashTime, xFlashRate );
-		board_red_led_toggle();
-		board_blue_led_toggle();
-			board_green_led_toggle();
+		//board_red_led_toggle();
+		//board_blue_led_toggle();
+		board_green_led_toggle();
 	}
 } /*lint !e715 !e818 !e830 Function definition must be standard for task creation. */
 
