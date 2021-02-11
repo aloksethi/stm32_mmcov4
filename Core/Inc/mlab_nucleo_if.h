@@ -37,6 +37,7 @@ typedef struct __attribute__((packed))
 
 typedef struct __attribute__((packed))
 {
+	uint32_t running_id;
 	uint8_t ic_id;
 	uint8_t command_code;
 	uint8_t num_chunks; //number of chunks of sub data

@@ -13,7 +13,6 @@
 static StaticQueue_t pc_queue_ds;
 static StaticSemaphore_t pc_mutex_ds;
 
-static pc_queue_data_t pc_queue_local_copy;
 static reg_t pc_tmp_local_copy; // should be local but stack might be small
 
 SemaphoreHandle_t pc_mutex_handle = NULL;
@@ -107,7 +106,10 @@ static void pc_program_bits(uint8_t ic_id, reg_t * tmp_reg)
 	else if (ic_id == 2)
 		board_send_le_ic2();
 	else
+	{
 		trace_printf("Wrong IC ID\n");
+		Error_Handler();
+	}
 
 	return;
 }
@@ -115,11 +117,18 @@ static void pc_program_bits(uint8_t ic_id, reg_t * tmp_reg)
 
 void vChipHandlerTask(void * pvParameters)
 {
+	pc_queue_data_t pc_queue_local_copy;
 
 	while(1)
 	{
 		if( xQueueReceive( g_pc_queue_handle, &pc_queue_local_copy, portMAX_DELAY ) == pdPASS )
 		{
+			if ((pc_queue_local_copy.ic_id == 0) ||
+					(pc_queue_local_copy.reg_id > G_MAX_NUM_REGS))
+			{
+				trace_printf("invalid message\n");
+				Error_Handler();
+			}
 			switch (pc_queue_local_copy.command_code)
 			{
 			case G_UC_SET_REG_CONFIG:
@@ -141,7 +150,7 @@ void vChipHandlerTask(void * pvParameters)
 void vStartChipRegTask(UBaseType_t uxPriority )
 {
 	BaseType_t xReturned;
-	g_pc_queue_handle = xQueueCreateStatic( PC_QUEUE_LENGTH, sizeof(reg_t), pc_queue_storage_area, &pc_queue_ds );
+	g_pc_queue_handle = xQueueCreateStatic( PC_QUEUE_LENGTH, sizeof(pc_queue_data_t), pc_queue_storage_area, &pc_queue_ds );
 	if( NULL == g_pc_queue_handle )
 	{
 		trace_printf("failed to create the pc queue\n");

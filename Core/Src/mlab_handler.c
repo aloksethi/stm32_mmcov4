@@ -28,7 +28,7 @@ void handle_command( mlab_data_t *raw_data_p )
 		uint8_t i, num_chunks; //number of chunks of sub data
 		reg_t * local_reg_ptr;
 
-		pc_queue_data_t pc_queue_local_copy;
+		pc_queue_data_t queue_post;
 
 		ic_id = raw_data_p->ic_id;
 		num_chunks = raw_data_p->num_chunks;
@@ -37,10 +37,11 @@ void handle_command( mlab_data_t *raw_data_p )
 			local_reg_ptr = (reg_t *)(&raw_data_p->data[0] + i*sizeof(reg_t));
 			pc_set_curr_value(ic_id, local_reg_ptr);
 
-			pc_queue_local_copy.command_code = G_UC_SET_REG_CONFIG;
-			pc_queue_local_copy.ic_id = ic_id;
-			pc_queue_local_copy.reg_id = local_reg_ptr->reg_id;
-		 xQueueSendToBack(g_pc_queue_handle, &pc_queue_local_copy, portMAX_DELAY);
+			queue_post.command_code = G_UC_SET_REG_CONFIG;
+			queue_post.ic_id = ic_id;
+			queue_post.reg_id = local_reg_ptr->reg_id;
+
+		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
 		}
 		break;
 	}
@@ -109,7 +110,7 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 	static ip_addr_t *addr;
 	static unsigned short port;
 	err_t err;
-	uint8_t ret_data[16];
+	int8_t ret_data[16];
 	void * ptr_payload = NULL;
 
 	conn = netconn_new(NETCONN_UDP);
@@ -124,6 +125,7 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			mlab_data_t *raw_data_p;
 			uint8_t sane;
 			uint16_t len;
+			uint32_t running_id;
 
 			addr = netbuf_fromaddr(buf);
 			port = netbuf_fromport(buf);
@@ -138,6 +140,7 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			//g_rcv_buffer[buf->p->tot_len] = '\0';
 
 			raw_data_p = (mlab_data_t *)(&g_rcv_buffer[0]);
+			running_id = ntohl(raw_data_p->running_id);
 
 			sane = sanity_check(raw_data_p);
 
@@ -149,14 +152,14 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			else
 			{
 				strcpy(ret_data, "NOT OK");
-
 			}
 
 			netbuf_data(buf, &ptr_payload, &len);
 
 			if (NULL != ptr_payload)
 			{
-				memcpy(ptr_payload, ret_data, sizeof(ret_data));
+				*(uint32_t *)(ptr_payload) = htonl(running_id);
+				memcpy(ptr_payload + sizeof(uint32_t), ret_data, sizeof(ret_data) + sizeof(uint32_t));
 			}
 			else
 			{
