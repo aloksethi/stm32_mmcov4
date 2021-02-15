@@ -67,6 +67,34 @@ void pc_save_default_value(uint8_t ic_id, reg_t * local_copy)
 	return;
 }
 
+void pc_save_mini_value(uint8_t ic_id, reg_t * local_copy)
+{
+    if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+    {
+		uint8_t reg_id = local_copy->reg_id;
+		pc_mini_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
+		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
+		memcpy((void *)pc_mini_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
+
+        xSemaphoreGive( pc_mutex_handle );
+    }
+	return;
+}
+
+void pc_save_maxi_value(uint8_t ic_id, reg_t * local_copy)
+{
+    if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+    {
+		uint8_t reg_id = local_copy->reg_id;
+		pc_maxi_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
+		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
+		memcpy((void *)pc_maxi_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
+
+        xSemaphoreGive( pc_mutex_handle );
+    }
+	return;
+}
+
 /*
  * reg_num is the register number-->6bit in mmcov4, 5 bit in older chips
  * buff-->pointer to the raw hex data, had to change it from uint64_t

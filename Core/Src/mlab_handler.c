@@ -54,7 +54,6 @@ void handle_command( mlab_data_t *raw_data_p )
 		uint8_t i, num_chunks; //number of chunks of sub data
 		reg_t * local_reg_ptr;
 
-//		pc_queue_data_t queue_post;
 		trace_printf("command: save_def \n");
 
 		ic_id = raw_data_p->ic_id;
@@ -63,15 +62,47 @@ void handle_command( mlab_data_t *raw_data_p )
 		{
 			local_reg_ptr = (reg_t *)(&raw_data_p->data[0] + i*sizeof(reg_t));
 			pc_save_default_value(ic_id, local_reg_ptr);
-
-//			queue_post.command_code = G_UC_SAVE_DEF_REG_CONFIG;
-//			queue_post.ic_id = ic_id;
-//			queue_post.reg_id = local_reg_ptr->reg_id;
-//
-//		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
 		}
 		break;
 	}
+
+	case G_UC_SAVE_MINI_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		uint8_t i, num_chunks; //number of chunks of sub data
+		reg_t * local_reg_ptr;
+
+		trace_printf("command: save_mini \n");
+
+		ic_id = raw_data_p->ic_id;
+		num_chunks = raw_data_p->num_chunks;
+		for (i=0; i<num_chunks; i++)
+		{
+			local_reg_ptr = (reg_t *)(&raw_data_p->data[0] + i*sizeof(reg_t));
+			pc_save_mini_value(ic_id, local_reg_ptr);
+		}
+		break;
+	}
+
+	case G_UC_SAVE_MAXI_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		uint8_t i, num_chunks; //number of chunks of sub data
+		reg_t * local_reg_ptr;
+
+		trace_printf("command: save_maxi \n");
+
+		ic_id = raw_data_p->ic_id;
+		num_chunks = raw_data_p->num_chunks;
+		for (i=0; i<num_chunks; i++)
+		{
+			local_reg_ptr = (reg_t *)(&raw_data_p->data[0] + i*sizeof(reg_t));
+			pc_save_maxi_value(ic_id, local_reg_ptr);
+		}
+		break;
+	}
+
+
 	}
 
 	return;
