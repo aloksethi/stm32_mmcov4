@@ -30,6 +30,8 @@ void handle_command( mlab_data_t *raw_data_p )
 
 		pc_queue_data_t queue_post;
 
+		trace_printf("command: set_reg \n");
+
 		ic_id = raw_data_p->ic_id;
 		num_chunks = raw_data_p->num_chunks;
 		for (i=0; i<num_chunks; i++)
@@ -46,6 +48,30 @@ void handle_command( mlab_data_t *raw_data_p )
 		break;
 	}
 
+	case G_UC_SAVE_DEF_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		uint8_t i, num_chunks; //number of chunks of sub data
+		reg_t * local_reg_ptr;
+
+//		pc_queue_data_t queue_post;
+		trace_printf("command: save_def \n");
+
+		ic_id = raw_data_p->ic_id;
+		num_chunks = raw_data_p->num_chunks;
+		for (i=0; i<num_chunks; i++)
+		{
+			local_reg_ptr = (reg_t *)(&raw_data_p->data[0] + i*sizeof(reg_t));
+			pc_save_default_value(ic_id, local_reg_ptr);
+
+//			queue_post.command_code = G_UC_SAVE_DEF_REG_CONFIG;
+//			queue_post.ic_id = ic_id;
+//			queue_post.reg_id = local_reg_ptr->reg_id;
+//
+//		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
+		}
+		break;
+	}
 	}
 
 	return;
@@ -54,7 +80,7 @@ uint8_t sanity_check( mlab_data_t *raw_data_p )
 {
 	uint8_t sane=0;
 
-	if ((raw_data_p->command_code < G_UC_APPLY_DEF_REG_CONFIG) ||
+	if ((raw_data_p->command_code <= G_UC_MIN_COMMAND_CODE) ||
 			(raw_data_p->command_code >= G_UC_MAX_COMMAND_CODE))
 	{
 		trace_printf("invalid command code : %d\n",raw_data_p->command_code);
@@ -62,11 +88,24 @@ uint8_t sanity_check( mlab_data_t *raw_data_p )
 		return sane;
 	}
 
+	if ((raw_data_p->ic_id == 0) || (raw_data_p->ic_id > G_MAX_ICS_PER_UC))
+	{
+		trace_printf("invalid ic_id\n");
+		sane = 0;
+		return sane;
+	}
+
+	if ((raw_data_p->num_chunks == 0) || (raw_data_p->num_chunks > G_MAX_NUM_REGS))
+		{
+			trace_printf("invalid num_chunks\n");
+			sane = 0;
+			return sane;
+		}
+
 	if (raw_data_p->command_code == G_UC_SET_REG_CONFIG)
 	{
 		uint8_t num_regs, i;
 
-		trace_printf("command: set_reg \n");
 
 		num_regs = raw_data_p->num_chunks;
 
@@ -88,12 +127,10 @@ uint8_t sanity_check( mlab_data_t *raw_data_p )
 			if ((cascade > G_REGS_PER_REG) || (reg_id > G_MAX_NUM_REGS))
 			{
 				trace_printf("invalid arguments\n");
-				sane = 1; //TODO: change sane to 0 here
+				sane = 0; //TODO: change sane to 0 here
 				return sane;
 			}
 		}
-
-
 	}
 
 
@@ -137,6 +174,10 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			}
 			netbuf_copy(buf, g_rcv_buffer, buf->p->tot_len);
 
+			trace_printf("rcvd udp, src_port:%d, ipaddr:",port);
+			ip4_addr_debug_print(LWIP_DBG_ON, addr);
+			trace_printf("\n");
+
 			//g_rcv_buffer[buf->p->tot_len] = '\0';
 
 			raw_data_p = (mlab_data_t *)(&g_rcv_buffer[0]);
@@ -169,9 +210,6 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			buf->p->len = 16;
 
 			netconn_send(conn, buf);
-			trace_printf("rcvd udp, src_port:%d, ipaddr:",port);
-			ip4_addr_debug_print(LWIP_DBG_ON, addr);
-			trace_printf("\n");
 			//LWIP_DEBUGF(LWIP_DBG_ON, ("got %s\n", buffer));
 			netbuf_delete(buf);
 

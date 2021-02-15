@@ -27,6 +27,10 @@ typedef struct __attribute__((packed))
 
 void pc_get_curr_value(uint8_t , reg_t * );
 void pc_set_curr_value(uint8_t , reg_t * );
+void pc_save_default_value(uint8_t , reg_t * );
+void pc_save_mini_value(uint8_t , reg_t * );
+void pc_save_maxi_value(uint8_t , reg_t * );
+
 
 void vStartChipRegTask(UBaseType_t );
 
