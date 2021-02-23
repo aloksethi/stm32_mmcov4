@@ -1869,7 +1869,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
   macinit.BackOffLimit = ETH_BACKOFFLIMIT_10;
   macinit.DeferralCheck = ETH_DEFFERRALCHECK_DISABLE;
   macinit.ReceiveAll = ETH_RECEIVEAll_DISABLE;
-  macinit.SourceAddrFilter = ETH_SOURCEADDRFILTER_DISABLE;
+  macinit.SourceAddrFilter = ETH_SOURCEADDRFILTER_NORMAL_ENABLE;//ETH_SOURCEADDRFILTER_DISABLE;
   macinit.PassControlFrames = ETH_PASSCONTROLFRAMES_BLOCKALL;
   macinit.BroadcastFramesReception = ETH_BROADCASTFRAMESRECEPTION_ENABLE;
   macinit.DestinationAddrFilter = ETH_DESTINATIONADDRFILTER_NORMAL;
@@ -1883,7 +1883,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
   macinit.PauseLowThreshold = ETH_PAUSELOWTHRESHOLD_MINUS4;
   macinit.UnicastPauseFrameDetect = ETH_UNICASTPAUSEFRAMEDETECT_DISABLE;
   macinit.ReceiveFlowControl = ETH_RECEIVEFLOWCONTROL_DISABLE;
-  macinit.TransmitFlowControl = ETH_TRANSMITFLOWCONTROL_DISABLE;
+  macinit.TransmitFlowControl = ETH_TRANSMITFLOWCONTROL_ENABLE;//ETH_TRANSMITFLOWCONTROL_DISABLE;
   macinit.VLANTagComparison = ETH_VLANTAGCOMPARISON_16BIT;
   macinit.VLANTagIdentifier = 0x0U;
   
