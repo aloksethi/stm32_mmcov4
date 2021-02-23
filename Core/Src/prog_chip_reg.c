@@ -30,68 +30,68 @@ static reg_t pc_maxi_reg_dbase[G_MAX_ICS_PER_UC][G_MAX_NUM_REGS];
 void pc_get_curr_value(uint8_t ic_id, reg_t * local_copy)
 {
 	if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
-	    {
-			uint8_t reg_id = local_copy->reg_id;
-			local_copy->cascade = pc_curr_reg_dbase[ic_id-1][reg_id].cascade;
-			memcpy((void *)local_copy->reg_val, (const void *)pc_curr_reg_dbase[ic_id-1][reg_id].reg_val, sizeof(local_copy->reg_val));
+	{
+		uint8_t reg_id = local_copy->reg_id;
+		local_copy->cascade = pc_curr_reg_dbase[ic_id-1][reg_id].cascade;
+		memcpy((void *)local_copy->reg_val, (const void *)pc_curr_reg_dbase[ic_id-1][reg_id].reg_val, sizeof(local_copy->reg_val));
 
-	        xSemaphoreGive( pc_mutex_handle );
-	    }
-		return;
+		xSemaphoreGive( pc_mutex_handle );
+	}
+	return;
 }
 
 void pc_set_curr_value(uint8_t ic_id, reg_t * local_copy)
 {
 	if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
-	    {
-			uint8_t reg_id = local_copy->reg_id;
-			pc_curr_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
-			memcpy((void *)pc_curr_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
+	{
+		uint8_t reg_id = local_copy->reg_id;
+		pc_curr_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
+		memcpy((void *)pc_curr_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
 
-	        xSemaphoreGive( pc_mutex_handle );
-	    }
-		return;
+		xSemaphoreGive( pc_mutex_handle );
+	}
+	return;
 }
 
 void pc_save_default_value(uint8_t ic_id, reg_t * local_copy)
 {
-    if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
-    {
+	if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+	{
 		uint8_t reg_id = local_copy->reg_id;
 		pc_dflt_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void *)pc_dflt_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
 
-        xSemaphoreGive( pc_mutex_handle );
-    }
+		xSemaphoreGive( pc_mutex_handle );
+	}
 	return;
 }
 
 void pc_save_mini_value(uint8_t ic_id, reg_t * local_copy)
 {
-    if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
-    {
+	if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+	{
 		uint8_t reg_id = local_copy->reg_id;
 		pc_mini_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void *)pc_mini_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
 
-        xSemaphoreGive( pc_mutex_handle );
-    }
+		xSemaphoreGive( pc_mutex_handle );
+	}
 	return;
 }
 
 void pc_save_maxi_value(uint8_t ic_id, reg_t * local_copy)
 {
-    if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
-    {
+	if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+	{
 		uint8_t reg_id = local_copy->reg_id;
 		pc_maxi_reg_dbase[ic_id-1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void *)pc_maxi_reg_dbase[ic_id-1][reg_id].reg_val, (const void *)local_copy->reg_val, sizeof(local_copy->reg_val));
 
-        xSemaphoreGive( pc_mutex_handle );
-    }
+		xSemaphoreGive( pc_mutex_handle );
+	}
 	return;
 }
 
@@ -156,20 +156,92 @@ void vChipHandlerTask(void * pvParameters)
 	{
 		if( xQueueReceive( g_pc_queue_handle, &pc_queue_local_copy, portMAX_DELAY ) == pdPASS )
 		{
-			if ((pc_queue_local_copy.ic_id == 0) ||
-					(pc_queue_local_copy.reg_id > G_MAX_NUM_REGS))
+			if ((pc_queue_local_copy.ic_id == 0))
 			{
 				trace_printf("invalid message\n");
 				Error_Handler();
 			}
 			switch (pc_queue_local_copy.command_code)
 			{
+
 			case G_UC_SET_REG_CONFIG:
 			{
+				if (pc_queue_local_copy.reg_id > G_MAX_NUM_REGS)
+				{
+					trace_printf("invalid message\n");
+					Error_Handler();
+				}
+
 				pc_tmp_local_copy.reg_id = pc_queue_local_copy.reg_id;
 				pc_get_curr_value(pc_queue_local_copy.ic_id, &pc_tmp_local_copy);
 
 				pc_program_bits(pc_queue_local_copy.ic_id, &pc_tmp_local_copy);
+				break;
+			}
+
+			case G_UC_APPLY_DEF_REG_CONFIG:
+			{
+				uint8_t ic_id = pc_queue_local_copy.ic_id;
+				reg_t * local_ptr;
+				uint8_t i;
+
+				board_blue_led_toggle();
+
+				if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+				{
+					for (i=0; i<G_MAX_NUM_REGS; i++)
+					{
+						local_ptr = &(pc_dflt_reg_dbase[ic_id-1][i]);
+						pc_program_bits(pc_queue_local_copy.ic_id, local_ptr);
+					}
+					xSemaphoreGive( pc_mutex_handle );
+				}
+				board_blue_led_toggle();
+
+				break;
+			}
+
+			case G_UC_APPLY_MAXI_REG_CONFIG:
+			{
+				uint8_t ic_id = pc_queue_local_copy.ic_id;
+				reg_t * local_ptr;
+				uint8_t i;
+
+				board_blue_led_toggle();
+
+				if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+				{
+					for (i=0; i<G_MAX_NUM_REGS; i++)
+					{
+						local_ptr = &(pc_maxi_reg_dbase[ic_id-1][i]);
+						pc_program_bits(pc_queue_local_copy.ic_id, local_ptr);
+					}
+					xSemaphoreGive( pc_mutex_handle );
+				}
+				board_blue_led_toggle();
+
+				break;
+			}
+
+			case G_UC_APPLY_MINI_REG_CONFIG:
+			{
+				uint8_t ic_id = pc_queue_local_copy.ic_id;
+				reg_t * local_ptr;
+				uint8_t i;
+
+				board_blue_led_toggle();
+
+				if( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE )
+				{
+					for (i=0; i<G_MAX_NUM_REGS; i++)
+					{
+						local_ptr = &(pc_mini_reg_dbase[ic_id-1][i]);
+						pc_program_bits(pc_queue_local_copy.ic_id, local_ptr);
+					}
+					xSemaphoreGive( pc_mutex_handle );
+				}
+				board_blue_led_toggle();
+
 				break;
 			}
 			}

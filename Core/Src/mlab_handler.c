@@ -102,6 +102,54 @@ void handle_command( mlab_data_t *raw_data_p )
 		break;
 	}
 
+	case G_UC_APPLY_DEF_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		pc_queue_data_t queue_post;
+
+		trace_printf("command: apply_def \n");
+
+		ic_id = raw_data_p->ic_id;
+		queue_post.command_code = G_UC_APPLY_DEF_REG_CONFIG;
+		queue_post.ic_id = ic_id;
+//			queue_post.reg_id = local_reg_ptr->reg_id;
+
+		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
+		break;
+	}
+
+	case G_UC_APPLY_MAXI_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		pc_queue_data_t queue_post;
+
+		trace_printf("command: apply_maxi \n");
+
+		ic_id = raw_data_p->ic_id;
+		queue_post.command_code = G_UC_APPLY_MAXI_REG_CONFIG;
+		queue_post.ic_id = ic_id;
+//			queue_post.reg_id = local_reg_ptr->reg_id;
+
+		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
+		break;
+	}
+
+	case G_UC_APPLY_MINI_REG_CONFIG:
+	{
+		uint8_t ic_id;
+		pc_queue_data_t queue_post;
+
+		trace_printf("command: apply_def \n");
+
+		ic_id = raw_data_p->ic_id;
+		queue_post.command_code = G_UC_APPLY_MINI_REG_CONFIG;
+		queue_post.ic_id = ic_id;
+//			queue_post.reg_id = local_reg_ptr->reg_id;
+
+		 xQueueSendToBack(g_pc_queue_handle, &queue_post, portMAX_DELAY);
+		break;
+	}
+
 
 	}
 
@@ -126,7 +174,7 @@ uint8_t sanity_check( mlab_data_t *raw_data_p )
 		return sane;
 	}
 
-	if ((raw_data_p->num_chunks == 0) || (raw_data_p->num_chunks > G_MAX_NUM_REGS))
+	if ((raw_data_p->num_chunks > G_MAX_NUM_REGS)) //num_chunks is 0 for apply_preset_config
 		{
 			trace_printf("invalid num_chunks\n");
 			sane = 0;
@@ -140,7 +188,7 @@ uint8_t sanity_check( mlab_data_t *raw_data_p )
 
 		num_regs = raw_data_p->num_chunks;
 
-		if (num_regs > G_MAX_NUM_REGS)
+		if (num_regs == 0)
 		{
 			trace_printf("invalid number of registers in the buffer\n");
 			sane = 0;
@@ -197,7 +245,7 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 
 			addr = netbuf_fromaddr(buf);
 			port = netbuf_fromport(buf);
-			netconn_connect(conn, addr, port);
+			//netconn_connect(conn, addr, port);
 			if (sizeof(g_rcv_buffer) <= buf->p->tot_len)
 			{
 				trace_printf("total packet bigger than available buffer\n");
