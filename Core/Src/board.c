@@ -155,25 +155,72 @@ return;
 //  return;
 //}
 
+static void board_en_pins_init(void)
+{
+	  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	     GPIO_InitStruct.Pin = EN_SUP_1_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_SUP_1_Port, &GPIO_InitStruct);
+
+	     GPIO_InitStruct.Pin = EN_SUP_2_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_SUP_2_Port, &GPIO_InitStruct);
+
+	     GPIO_InitStruct.Pin = EN_SUP_3_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_SUP_3_Port, &GPIO_InitStruct);
+
+	     GPIO_InitStruct.Pin = EN_SUP_4_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_SUP_4_Port, &GPIO_InitStruct);
+
+	     GPIO_InitStruct.Pin = EN_SUP_5_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_SUP_5_Port, &GPIO_InitStruct);
+
+	     GPIO_InitStruct.Pin = EN_POW_BOARD_Pin;
+	     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	     GPIO_InitStruct.Pull = GPIO_NOPULL;
+	     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	     HAL_GPIO_Init(EN_POW_BOARD_Port, &GPIO_InitStruct);
+
+		    HAL_GPIO_WritePin(EN_SUP_1_Port, EN_SUP_1_Pin, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(EN_SUP_2_Port, EN_SUP_2_Pin, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(EN_SUP_3_Port, EN_SUP_3_Pin, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(EN_SUP_4_Port, EN_SUP_4_Pin, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(EN_SUP_4_Port, EN_SUP_5_Pin, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(EN_POW_BOARD_Port, EN_POW_BOARD_Pin, GPIO_PIN_SET);
+
+}
 static void board_gpio_init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOE_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOF_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(EN_SUP_4_Port, EN_SUP_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12
@@ -236,18 +283,12 @@ static void board_gpio_init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : EN_SUP_4_Pin */
-  GPIO_InitStruct.Pin = EN_SUP_4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EN_SUP_4_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB0 PB2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	 /*Configure GPIO pins : PB0 PB2 */
+	  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2;
+	  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB1 PB10 PB11 PB12
                            LD3_Pin PB15 PB4 LED_BLUE_Pin
@@ -332,7 +373,7 @@ void board_init(void)
 
 	board_i2c_init();
 	board_spi_init();
-	board_uart_init();
+//	board_uart_init();
 //	board_wdog_init();
 
 	return;
