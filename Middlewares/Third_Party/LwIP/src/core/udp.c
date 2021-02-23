@@ -214,7 +214,7 @@ udp_input(struct pbuf *p, struct netif *inp)
   /* Check minimum length (UDP header) */
   if (p->len < UDP_HLEN) {
     /* drop short packets */
-    LWIP_DEBUGF(UDP_DEBUG,
+    LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON),
                 ("udp_input: short UDP datagram (%"U16_F" bytes) discarded\n", p->tot_len));
     UDP_STATS_INC(udp.lenerr);
     UDP_STATS_INC(udp.drop);
@@ -237,11 +237,11 @@ udp_input(struct pbuf *p, struct netif *inp)
   udp_debug_print(udphdr);
 
   /* print the UDP source and destination */
-  LWIP_DEBUGF(UDP_DEBUG, ("udp ("));
-  ip_addr_debug_print_val(UDP_DEBUG, *ip_current_dest_addr());
-  LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F") <-- (", lwip_ntohs(udphdr->dest)));
-  ip_addr_debug_print_val(UDP_DEBUG, *ip_current_src_addr());
-  LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F")\n", lwip_ntohs(udphdr->src)));
+  LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), ("udp ("));
+  ip_addr_debug_print_val((UDP_DEBUG | LWIP_DBG_ON), *ip_current_dest_addr());
+  LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), (", %"U16_F") <-- (", lwip_ntohs(udphdr->dest)));
+  ip_addr_debug_print_val((UDP_DEBUG | LWIP_DBG_ON), *ip_current_src_addr());
+  LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), (", %"U16_F")\n", lwip_ntohs(udphdr->src)));
 
   pcb = NULL;
   prev = NULL;
@@ -252,11 +252,11 @@ udp_input(struct pbuf *p, struct netif *inp)
    * matches the local port and ip address gets the datagram. */
   for (pcb = udp_pcbs; pcb != NULL; pcb = pcb->next) {
     /* print the PCB local and remote address */
-    LWIP_DEBUGF(UDP_DEBUG, ("pcb ("));
-    ip_addr_debug_print_val(UDP_DEBUG, pcb->local_ip);
-    LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F") <-- (", pcb->local_port));
-    ip_addr_debug_print_val(UDP_DEBUG, pcb->remote_ip);
-    LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F")\n", pcb->remote_port));
+    LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), ("pcb ("));
+    ip_addr_debug_print_val((UDP_DEBUG | LWIP_DBG_ON), pcb->local_ip);
+    LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), (", %"U16_F") <-- (", pcb->local_port));
+    ip_addr_debug_print_val((UDP_DEBUG | LWIP_DBG_ON), pcb->remote_ip);
+    LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON), (", %"U16_F")\n", pcb->remote_port));
 
     /* compare PCB local addr+port to UDP destination addr+port */
     if ((pcb->local_port == dest) &&
@@ -408,7 +408,7 @@ udp_input(struct pbuf *p, struct netif *inp)
         goto end;
       }
     } else {
-      LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: not for us.\n"));
+      LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON) | LWIP_DBG_TRACE, ("udp_input: not for us.\n"));
 
 #if LWIP_ICMP || LWIP_ICMP6
       /* No match was found, send ICMP destination port unreachable unless
