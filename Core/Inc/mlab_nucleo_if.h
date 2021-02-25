@@ -25,6 +25,13 @@
 #define G_UC_APPLY_MAXI_REG_CONFIG			6
 #define G_UC_APPLY_MINI_REG_CONFIG 			7
 #define G_UC_SET_CURR_AS_DEF_CONFIG			8
+#define G_UC_SYNTH_POWER				9
+#define G_UC_SYNTH_CONFIG				10
+#define G_UC_3V3_POWER					11
+#define G_UC_LO_SWITCH					12
+#define G_UC_PA_GATE_BIAS				13
+#define G_UC_PB_SUP_EN					14 /*for turning a supply on/off*/
+#define G_UC_PB_SUP_VAL					15 /*for setting the supply value*/
 
 #define G_UC_MAX_COMMAND_CODE				20
 
@@ -32,20 +39,19 @@
 
 typedef struct __attribute__((packed))
 {
-	uint8_t reg_id;		// latch id
-	uint8_t cascade;	// num of shift regs in cascade, most have value 3
-	uint8_t reg_val[G_STORAGE_FOR_ONE_REG_BYTES]; // value saved in bytes
+  uint8_t reg_id;		// latch id
+  uint8_t cascade;	// num of shift regs in cascade, most have value 3
+  uint8_t reg_val[G_STORAGE_FOR_ONE_REG_BYTES]; // value saved in bytes
 } reg_t;
 
 typedef struct __attribute__((packed))
 {
-	uint32_t running_id;
-	uint8_t ic_id;
-	uint8_t command_code;
-	uint8_t num_chunks; //number of chunks of sub data
-	void * data[0];		// placement for a pointer, can point to  reg_t or pot_t
+  uint32_t running_id;
+  uint8_t ic_id;
+  uint8_t command_code;
+  uint8_t num_chunks; //number of chunks of sub data
+  void *data[0];	// placement for a pointer, can point to  reg_t or pot_t
 } mlab_data_t;
 
 #endif /* INC_MLAB_NUCLEO_IF_H_ */
-
 

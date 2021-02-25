@@ -26,29 +26,26 @@ extern "C" {
 #include "mlab_handler.h"
 #include "prog_chip_reg.h"
 #include "mlab_nucleo_if.h"
+#include "pot_handler.h"
 
-#define MATLAB_HANLDER_TASK_PRIORITY		(tskIDLE_PRIORITY + 2UL)  //-->talking with matlab
-#define SENSOR_MONITOR_TASK_PRIORITY		(tskIDLE_PRIORITY + 3UL)  //-->monitoring sensors and turning off in case limits go over
-#define CHIP_REG_HANDLER_TASK_PRIORITY		(tskIDLE_PRIORITY + 2UL)  //--> programming chip, so when on  should be top one
+#define CHIP_REG_HANDLER_TASK_PRIORITY		(configMAX_PRIORITIES - 1UL)  //--> programming chip, so when on  should be top one
+#define SYNTH_TASK_PRIORITY					(tskIDLE_PRIORITY + 3UL)
 #define POT_TASK_PRIORITY					(tskIDLE_PRIORITY + 3UL)
+#define MATLAB_HANLDER_TASK_PRIORITY		(tskIDLE_PRIORITY + 2UL)  //-->talking with matlab
+#define SENSOR_TASK_PRIORITY				(tskIDLE_PRIORITY + 1UL)
 #define LED_FLASH_TASK_PRIORITY				(tskIDLE_PRIORITY + 0UL)
 
-
-#define MATLAB_HANLDER_STACK_SIZE			(3 * configMINIMAL_STACK_SIZE)
 #define CHIP_REG_STACK_SIZE					(2 * configMINIMAL_STACK_SIZE)
-#define LED_STACK_SIZE						(1 * configMINIMAL_STACK_SIZE)
+#define SYNTH_STACK_SIZE					(3 * configMINIMAL_STACK_SIZE)
+#define POT_STACK_SIZE						(3 * configMINIMAL_STACK_SIZE)
+#define MATLAB_HANLDER_STACK_SIZE			(3 * configMINIMAL_STACK_SIZE)
 #define SENSOR_STACK_SIZE					(3 * configMINIMAL_STACK_SIZE)
-#define POT_STACK_SIZE						(2 * configMINIMAL_STACK_SIZE)
+#define LED_STACK_SIZE						(1 * configMINIMAL_STACK_SIZE)
 
-
-extern TaskHandle_t				g_handle_mlab_task;
-extern TaskHandle_t				g_handle_chip_reg_task;
-
-extern QueueHandle_t 			g_pc_queue_handle;
+extern QueueHandle_t g_pc_queue_handle;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,21 @@
 #ifndef INC_BOARD_H_
 #define INC_BOARD_H_
 
+extern I2C_HandleTypeDef g_hi2c1;
+extern SPI_HandleTypeDef g_hspi1;
+extern UART_HandleTypeDef g_huart3;
+
 #define CHIP_CLK_DELAY				20000
+
+#define SYNTH_POW_Pin				GPIO_PIN_7
+#define SYNTH_POW_Port				GPIOC
+#define EN_3V3_POW_Pin				GPIO_PIN_1
+#define EN_3V3_POW_Port				GPIOB
+
+#define LO_SW1_Pin					GPIO_PIN_10
+#define LO_SW1_Port					GPIOB
+#define LO_SW2_Pin					GPIO_PIN_15
+#define LO_SW2_Port					GPIOB
 
 #define EN_SUP_1_Pin 				GPIO_PIN_4
 #define EN_SUP_1_Port 				GPIOB
@@ -39,7 +53,6 @@
 #define IC2_LE_Pin					GPIO_PIN_12
 #define IC2_LE_Port					GPIOB
 
-
 #define USER_Btn_Pin 				GPIO_PIN_13
 #define USER_Btn_GPIO_Port 			GPIOC
 #define MCO_Pin 					GPIO_PIN_0
@@ -66,8 +79,8 @@
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin 		GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port 	GPIOG
-#define USB_SOF_Pin GPIO_PIN_8
-#define USB_SOF_GPIO_Port GPIOA
+#define USB_SOF_Pin 				GPIO_PIN_8
+#define USB_SOF_GPIO_Port 			GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9
 #define USB_VBUS_GPIO_Port GPIOA
 #define USB_ID_Pin GPIO_PIN_10
@@ -85,15 +98,16 @@
 #define RMII_TXD0_Pin GPIO_PIN_13
 #define RMII_TXD0_GPIO_Port GPIOG
 
-
 void board_red_led_toggle(void);
 void board_green_led_toggle(void);
 void board_blue_led_toggle(void);
 
-void board_set_reg_data(uint8_t);
-void board_send_reg_clock(void);
-void board_send_le_ic1(void);
-void board_send_le_ic2(void);
+void board_synth_power_on(void);
+void board_synth_power_off(void);
+void board_3v3_power_on(void);
+void board_3v3_power_off(void);
+
+void board_set_lo_switch(uint8_t);
 
 void board_init(void);
 

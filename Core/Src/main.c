@@ -2,8 +2,6 @@
 #include "cmsis_os.h"
 #include "lwip.h"
 
-TaskHandle_t	g_handle_mlab_task;
-TaskHandle_t	g_handle_chip_reg_task;
 
 QueueHandle_t 	g_pc_queue_handle;
 
@@ -23,10 +21,6 @@ int main(void)
   trace_init();
 
   /* Initialize all configured peripherals */
-  //MX_GPIO_Init();
-  //MX_I2C1_Init();
-  //MX_SPI1_Init();
-  //MX_USART3_UART_Init();
  // MX_WWDG_Init();
 
   board_init();
@@ -36,6 +30,9 @@ int main(void)
   vStartLEDFlashTasks( LED_FLASH_TASK_PRIORITY );
   vStartMlabHandlerTask( MATLAB_HANLDER_TASK_PRIORITY );
   vStartChipRegTask( CHIP_REG_HANDLER_TASK_PRIORITY );
+  vStartSynthTask( SYNTH_TASK_PRIORITY );
+  vStartPotTask( POT_TASK_PRIORITY );
+  vStartSensorTask( SENSOR_TASK_PRIORITY );
 
 
   /* Start scheduler */
