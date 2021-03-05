@@ -203,8 +203,8 @@ void handle_command(mlab_data_t *raw_data_p)
 					+ i * sizeof(pot_data_t));
 
 			queue_post.command_code = raw_data_p->command_code;
-			queue_post.pot_data.pot_id = local_reg_ptr->pot_id;
-			queue_post.pot_data.pot_status = local_reg_ptr->pot_status;
+			queue_post.pot_data.sup_id = local_reg_ptr->sup_id;
+			queue_post.pot_data.sup_status = local_reg_ptr->sup_status;
 			queue_post.pot_data.pot_val = local_reg_ptr->pot_val;
 
 			xQueueSendToBack(g_pot_queue_handle, &queue_post, portMAX_DELAY);
@@ -216,7 +216,7 @@ void handle_command(mlab_data_t *raw_data_p)
 
 	return;
 }
-uint8_t sanity_check(mlab_data_t *raw_data_p)
+static uint8_t sanity_check(mlab_data_t *raw_data_p)
 {
 	uint8_t sane = 0;
 
@@ -272,6 +272,48 @@ uint8_t sanity_check(mlab_data_t *raw_data_p)
 		}
 	}
 
+	if (raw_data_p->command_code == G_UC_PB_SUP_EN)
+	{
+		pot_data_t *local_reg_ptr;
+		uint8_t i, num_chunks, sup_id; //number of chunks of sub data
+
+		num_chunks = raw_data_p->num_chunks;
+		for (i = 0; i < num_chunks; i++)
+		{
+			local_reg_ptr = (pot_data_t*) (&raw_data_p->data[0]
+					+ i * sizeof(pot_data_t));
+
+			sup_id = local_reg_ptr->sup_id;
+			if ((sup_id == 0) || (sup_id > G_PB_SUP_ALL))
+			{
+				sane = 0;
+				trace_printf("invalid supply id\n");
+				return sane;
+			}
+
+		}
+	}
+	if (raw_data_p->command_code == G_UC_PB_SUP_VAL)
+	{
+		pot_data_t *local_reg_ptr;
+		uint8_t i, num_chunks, sup_id; //number of chunks of sub data
+
+		num_chunks = raw_data_p->num_chunks;
+		for (i = 0; i < num_chunks; i++)
+		{
+			local_reg_ptr = (pot_data_t*) (&raw_data_p->data[0]
+					+ i * sizeof(pot_data_t));
+
+			sup_id = local_reg_ptr->sup_id;
+			if ((sup_id == 0) || (sup_id >= G_PB_SUP_ALL))
+			{
+				sane = 0;
+				trace_printf("invalid supply id\n");
+				return sane;
+			}
+
+		}
+	}
 	sane = 1;
 	return sane;
 }

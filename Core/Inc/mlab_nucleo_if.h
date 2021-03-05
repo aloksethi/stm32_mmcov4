@@ -35,22 +35,30 @@
 
 #define G_UC_MAX_COMMAND_CODE				20
 
+#define G_PB_SUP1						1
+#define G_PB_SUP2						2
+#define G_PB_SUP3						3
+#define G_PB_SUP4						4
+#define G_PB_SUP5						5
+#define G_PB_SUP_LCL_5V					6
+#define G_PB_SUP_ALL					7
+
 #define G_NUCLEO_PORT_NUM					4040
 
 typedef struct __attribute__((packed))
 {
-  uint8_t reg_id;		// latch id
-  uint8_t cascade;	// num of shift regs in cascade, most have value 3
-  uint8_t reg_val[G_STORAGE_FOR_ONE_REG_BYTES]; // value saved in bytes
+	uint8_t reg_id;		// latch id
+	uint8_t cascade;	// num of shift regs in cascade, most have value 3
+	uint8_t reg_val[G_STORAGE_FOR_ONE_REG_BYTES]; // value saved in bytes
 } reg_t;
 
 typedef struct __attribute__((packed))
 {
-  uint32_t running_id;
-  uint8_t ic_id;
-  uint8_t command_code;
-  uint8_t num_chunks; //number of chunks of sub data
-  void *data[0];	// placement for a pointer, can point to  reg_t or pot_t
+	uint32_t running_id;
+	uint8_t ic_id;
+	uint8_t command_code;
+	uint8_t num_chunks; //number of chunks of sub data
+	void *data[0];	// placement for a pointer, can point to  reg_t or pot_t
 } mlab_data_t;
 
 #endif /* INC_MLAB_NUCLEO_IF_H_ */

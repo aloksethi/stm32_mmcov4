@@ -10,10 +10,22 @@
 
 #define POT_QUEUE_LENGTH	5
 
+#define I2C_POT_SUP1_ADDRESS		(0x58 | (0x0 <<1))
+#define I2C_POT_SUP2_ADDRESS		(0x58 | (0x2 <<1))
+#define I2C_POT_SUP3_ADDRESS		(0x58 | (0x2 <<1))
+#define I2C_POT_SUP4_ADDRESS		(0x58 | (0x1 <<1))
+#define I2C_POT_SUP5_ADDRESS		(0x58 | (0x0 <<1))
+
+#define I2C_POT_SUP1_CHANNEL		0
+#define I2C_POT_SUP2_CHANNEL		1
+#define I2C_POT_SUP3_CHANNEL		0
+#define I2C_POT_SUP4_CHANNEL		1
+#define I2C_POT_SUP5_CHANNEL		1
+
 typedef struct __attribute__((packed))
 {
-	uint8_t pot_id;
-	uint8_t pot_status;
+	uint8_t sup_id;
+	uint8_t sup_status;
 	uint8_t pot_val;
 } pot_data_t;
 

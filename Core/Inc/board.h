@@ -8,9 +8,14 @@
 #ifndef INC_BOARD_H_
 #define INC_BOARD_H_
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 extern I2C_HandleTypeDef g_hi2c1;
 extern SPI_HandleTypeDef g_hspi1;
 extern UART_HandleTypeDef g_huart3;
+extern SemaphoreHandle_t g_mutex_i2c_op;
+extern SemaphoreHandle_t g_mutex_spi_op;
 
 #define CHIP_CLK_DELAY				20000
 
@@ -108,6 +113,19 @@ void board_3v3_power_on(void);
 void board_3v3_power_off(void);
 
 void board_set_lo_switch(uint8_t);
+
+void board_pb_sup1_en(void);
+void board_pb_sup1_dis(void);
+void board_pb_sup2_en(void);
+void board_pb_sup2_dis(void);
+void board_pb_sup3_en(void);
+void board_pb_sup3_dis(void);
+void board_pb_sup4_en(void);
+void board_pb_sup4_dis(void);
+void board_pb_sup5_en(void);
+void board_pb_sup5_dis(void);
+void board_pb_lcl5v_en(void);
+void board_pb_lcl5v_dis(void);
 
 void board_init(void);
 

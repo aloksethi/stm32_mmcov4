@@ -7,9 +7,6 @@
 
 #include "main.h"
 
-#define I2C_POT_1V_ADDRESS		(0x58 | (0x0 <<1))
-#define I2C_POT_1V_CHANNEL		0
-
 QueueHandle_t g_pot_queue_handle;
 
 static TaskHandle_t g_handle_pot_task;
@@ -18,33 +15,65 @@ static StaticQueue_t pot_queue_ds;
 static uint8_t pot_queue_storage_area[POT_QUEUE_LENGTH
 		* sizeof(pot_queue_data_t)];
 
-static HAL_StatusTypeDef i2c_ll_set_pot(uint8_t addr, uint8_t channel,
-		uint8_t val)
+static void pot_id_to_addr_map(uint8_t id, uint8_t *addr, uint8_t *channel)
 {
-	HAL_StatusTypeDef ret1 = HAL_ERROR;
-	;
-	uint8_t data[2];
+
+	switch (id)
+	{
+	case G_PB_SUP1:
+	{
+		*addr = I2C_POT_SUP1_ADDRESS;
+		*channel = I2C_POT_SUP1_CHANNEL;
+		break;
+	}
+	case G_PB_SUP2:
+	{
+		*addr = I2C_POT_SUP2_ADDRESS;
+		*channel = I2C_POT_SUP2_CHANNEL;
+		break;
+	}
+	case G_PB_SUP3:
+	{
+		*addr = I2C_POT_SUP3_ADDRESS;
+		*channel = I2C_POT_SUP3_CHANNEL;
+		break;
+	}
+	case G_PB_SUP4:
+	{
+		*addr = I2C_POT_SUP4_ADDRESS;
+		*channel = I2C_POT_SUP4_CHANNEL;
+		break;
+	}
+	case G_PB_SUP5:
+	{
+		*addr = I2C_POT_SUP5_ADDRESS;
+		*channel = I2C_POT_SUP5_CHANNEL;
+		break;
+	}
+
+	}
+	return;
+}
+static uint8_t i2c_ll_set_pot(uint8_t addr, uint8_t channel, uint8_t val)
+{
+	uint8_t data[2], ret_val;
+	HAL_StatusTypeDef ret;
 
 	data[0] = (uint8_t) ((channel & 0x1) << 7);
 	data[1] = val;
 
-	//if(xSemaphoreTake(g_mutex_i2c_op, portMAX_DELAY ) == pdTRUE )
+	if (xSemaphoreTake(g_mutex_i2c_op, portMAX_DELAY) == pdTRUE)
 	{
-		ret1 = HAL_I2C_Master_Transmit(&g_hi2c1, addr, data, sizeof(data), 1);
-		//	xSemaphoreGive(g_mutex_i2c_op);
+		ret = HAL_I2C_Master_Transmit(&g_hi2c1, addr, data, sizeof(data), 100);
+		xSemaphoreGive(g_mutex_i2c_op);
 	}
-
-	if (HAL_OK != ret1)
-	{
-		trace_printf("failed to set pot %x \n", ret1);
-		ret1 = HAL_ERROR;
-	}
+	if (ret == HAL_OK)
+		ret_val = 0;
 	else
 	{
-		trace_printf("success in setting pot\n");
-		ret1 = HAL_OK;
+		trace_printf("i2c_op failed: %d\n", ret);
 	}
-	return ret1;
+	return ret_val;
 }
 
 void vPotHandlerTask(void *pvParameters)
@@ -62,13 +91,13 @@ void vPotHandlerTask(void *pvParameters)
 			case G_UC_PB_SUP_EN:
 			{
 				uint8_t id, status;
-				id = pot_queue_local_copy.pot_data.pot_id;
-				status = pot_queue_local_copy.pot_data.pot_status;
+				id = pot_queue_local_copy.pot_data.sup_id;
+				status = pot_queue_local_copy.pot_data.sup_status;
 
 				switch (id)
 				{
 
-				case 1:
+				case G_PB_SUP1:
 				{
 					if (status)
 						board_pb_sup1_en();
@@ -77,7 +106,7 @@ void vPotHandlerTask(void *pvParameters)
 
 					break;
 				}
-				case 2:
+				case G_PB_SUP2:
 				{
 					if (status)
 						board_pb_sup2_en();
@@ -86,7 +115,7 @@ void vPotHandlerTask(void *pvParameters)
 
 					break;
 				}
-				case 3:
+				case G_PB_SUP3:
 				{
 					if (status)
 						board_pb_sup3_en();
@@ -95,7 +124,7 @@ void vPotHandlerTask(void *pvParameters)
 
 					break;
 				}
-				case 4:
+				case G_PB_SUP4:
 				{
 					if (status)
 						board_pb_sup4_en();
@@ -104,7 +133,7 @@ void vPotHandlerTask(void *pvParameters)
 
 					break;
 				}
-				case 5:
+				case G_PB_SUP5:
 				{
 					if (status)
 						board_pb_sup5_en();
@@ -113,12 +142,36 @@ void vPotHandlerTask(void *pvParameters)
 
 					break;
 				}
-				case 6:
+				case G_PB_SUP_LCL_5V:
 				{
 					if (status)
 						board_pb_lcl5v_en();
 					else
 						board_pb_lcl5v_dis();
+
+					break;
+				}
+				case G_PB_SUP_ALL:
+				{
+					if (status)
+					{
+						board_pb_lcl5v_en();
+						board_pb_sup1_en();
+						board_pb_sup2_en();
+						board_pb_sup3_en();
+						board_pb_sup4_en();
+						board_pb_sup5_en();
+
+					}
+					else
+					{
+						board_pb_sup1_dis();
+						board_pb_sup2_dis();
+						board_pb_sup3_dis();
+						board_pb_sup4_dis();
+						board_pb_sup5_dis();
+						board_pb_lcl5v_dis();
+					}
 
 					break;
 				}
@@ -129,12 +182,14 @@ void vPotHandlerTask(void *pvParameters)
 
 			case G_UC_PB_SUP_VAL:
 			{
-				HAL_StatusTypeDef ret1;
-				uint8_t addr, channel, val;
+				uint8_t ret;
+				uint8_t id, addr, channel, raw_val;
+				id = pot_queue_local_copy.pot_data.sup_id;
+				raw_val = pot_queue_local_copy.pot_data.pot_val;
 
-				addr = (uint8_t) I2C_POT_1V_ADDRESS;
-				channel = (uint8_t) I2C_POT_1V_CHANNEL;
-				ret1 = i2c_ll_set_pot(addr, channel, val);
+				pot_id_to_addr_map(id, &addr, &channel);
+
+				ret = i2c_ll_set_pot(addr, channel, raw_val);
 
 				break;
 			}

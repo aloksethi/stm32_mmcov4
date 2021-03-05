@@ -11,6 +11,15 @@ I2C_HandleTypeDef g_hi2c1;
 SPI_HandleTypeDef g_hspi1;
 UART_HandleTypeDef g_huart3;
 
+SemaphoreHandle_t g_mutex_i2c_op;  //mutex for i2c access
+SemaphoreHandle_t g_mutex_spi_op;  //mutex for spi access
+/*
+ * don't have i2c access functions here because of how the sensor operates.
+ * sensor first needs to send data on i2c and then it can read, which means it has to hold lock after the send
+ * transsaction and can release it after reading i2c.
+ * it was easier to do that in the sensor handler than here
+ */
+
 static void board_i2c_init(void)
 {
 	g_hi2c1.Instance = I2C1;
@@ -475,6 +484,18 @@ void board_init(void)
 //	board_uart_init();
 //	board_wdog_init();
 
+	g_mutex_i2c_op = xSemaphoreCreateMutex();
+	if (NULL == g_mutex_i2c_op)
+	{
+		trace_printf("failed to create global mutex for i2c\n");
+		Error_Handler();
+	}
+	g_mutex_spi_op = xSemaphoreCreateMutex();
+	if (NULL == g_mutex_i2c_op)
+	{
+		trace_printf("failed to create global mutex for spi\n");
+		Error_Handler();
+	}
 	return;
 }
 
