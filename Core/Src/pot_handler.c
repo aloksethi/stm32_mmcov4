@@ -170,7 +170,7 @@ void vPotHandlerTask(void *pvParameters)
 						board_pb_sup3_dis();
 						board_pb_sup4_dis();
 						board_pb_sup5_dis();
-						board_pb_lcl5v_dis();
+						//board_pb_lcl5v_dis();
 					}
 
 					break;
