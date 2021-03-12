@@ -212,6 +212,14 @@ void handle_command(mlab_data_t *raw_data_p)
 		break;
 	}
 
+	case G_UC_PB_SENSORS:
+	{
+		trace_printf("command: get pb sensors\n");
+		xTaskNotifyGive(g_handle_sensor_task);
+
+		break;
+	}
+
 	}
 
 	return;

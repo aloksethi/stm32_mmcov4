@@ -32,6 +32,7 @@
 #define G_UC_PA_GATE_BIAS				13
 #define G_UC_PB_SUP_EN					14 /*for turning a supply on/off*/
 #define G_UC_PB_SUP_VAL					15 /*for setting the supply value*/
+#define G_UC_PB_SENSORS					16
 
 #define G_UC_MAX_COMMAND_CODE				20
 

@@ -27,6 +27,7 @@ extern "C" {
 #include "prog_chip_reg.h"
 #include "mlab_nucleo_if.h"
 #include "pot_handler.h"
+#include "sensor_handler.h"
 
 #define CHIP_REG_HANDLER_TASK_PRIORITY		(configMAX_PRIORITIES - 1UL)  //--> programming chip, so when on  should be top one
 #define SYNTH_TASK_PRIORITY					(tskIDLE_PRIORITY + 3UL)

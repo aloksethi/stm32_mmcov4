@@ -8,6 +8,8 @@
 #ifndef INC_SENSOR_HANDLER_H_
 #define INC_SENSOR_HANDLER_H_
 
+extern TaskHandle_t g_handle_sensor_task;
+
 /*
  * U2 meas current, v1-2 ->sup1, v3-4->sup2, v5-6->sup3, v7-8->sup4
  * U3 meas V, v1-> sup1, v2->sup2, v3->sup3, v4->sup4, rest not used (bias current, temp)
@@ -21,7 +23,6 @@
 #define SENSOR_TEMP_SCALE       100 //temp is scaled by 100
 #define SENSOR_VOLT_SCALE       1000 //voltage is scaled by 1000
 #define SENSOR_CURR_SCALE       1000000 //current is scaled by 1e6
-
 
 #define LTC2991_STATUS_LOW_REG              0x00    //!< Data_Valid Bits(V1 Through V8)
 #define LTC2991_STATUS_HIGH_REG             0x01    //!< Data_valid bits
