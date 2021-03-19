@@ -18,9 +18,12 @@
 static uint8_t g_rcv_buffer[2048]; // biggest payload
 
 static TaskHandle_t g_handle_mlab_task;
+static sensor_data_t *sensor_queue_ptr;
 
-void handle_command(mlab_data_t *raw_data_p)
+static uint16_t handle_command(mlab_data_t *raw_data_p)
 {
+	uint16_t data_to_return = 0;
+
 	switch (raw_data_p->command_code)
 	{
 
@@ -217,12 +220,20 @@ void handle_command(mlab_data_t *raw_data_p)
 		trace_printf("command: get pb sensors\n");
 		xTaskNotifyGive(g_handle_sensor_task);
 
+		if (xQueueReceive(g_sensor_queue_handle, &sensor_queue_ptr,
+				(300 / portTICK_PERIOD_MS)) == pdPASS)
+		{
+			data_to_return = sizeof(sensor_data_t);
+		}
+		else
+			data_to_return = 0;
+
 		break;
 	}
 
 	}
 
-	return;
+	return data_to_return;
 }
 static uint8_t sanity_check(mlab_data_t *raw_data_p)
 {
@@ -335,7 +346,7 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 	static ip_addr_t *addr;
 	static unsigned short port;
 	err_t err;
-	int8_t ret_data[16];
+	int8_t ret_data[4];
 	void *ptr_payload = NULL;
 
 	conn = netconn_new(NETCONN_UDP);
@@ -351,6 +362,8 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			uint8_t sane;
 			uint16_t len;
 			uint32_t running_id;
+			uint16_t data_to_return;
+			uint16_t tot_amt_to_return;
 
 			addr = netbuf_fromaddr(buf);
 			port = netbuf_fromport(buf);
@@ -376,31 +389,48 @@ static portTASK_FUNCTION( vMlabHandlerTask, pvParameters )
 			if (sane)
 			{
 				strcpy(ret_data, "OK");
-				handle_command(raw_data_p);
+				data_to_return = handle_command(raw_data_p);
 			}
 			else
 			{
-				strcpy(ret_data, "NOT OK");
+				strcpy(ret_data, "NOK");
 			}
 
 			netbuf_data(buf, &ptr_payload, &len);
+			//trace_printf("len of buf=%d\n", len);
+			tot_amt_to_return = data_to_return + sizeof(running_id)
+					+ sizeof(ret_data);
+			if (len < tot_amt_to_return)
+			{
+				//trace_printf("FIXME:less bytes availabel");
+				netbuf_free(buf);
+				ptr_payload = netbuf_alloc(buf, tot_amt_to_return);
+			}
 
 			if (NULL != ptr_payload)
 			{
 				*(uint32_t*) (ptr_payload) = htonl(running_id);
-				memcpy(ptr_payload + sizeof(uint32_t), ret_data,
-						sizeof(ret_data) + sizeof(uint32_t));
+//				memcpy(ptr_payload + sizeof(running_id), ret_data,
+//						sizeof(ret_data) + sizeof(uint32_t));
+				memcpy(ptr_payload + sizeof(running_id), ret_data,
+						sizeof(ret_data));
+				if (data_to_return)
+				{
+					memcpy(ptr_payload + sizeof(running_id) + sizeof(ret_data),
+							sensor_queue_ptr, sizeof(sensor_data_t));
+				}
+				buf->p->tot_len = tot_amt_to_return;
+				buf->p->len = tot_amt_to_return;
+
+				netconn_send(conn, buf);
+				//LWIP_DEBUGF(LWIP_DBG_ON, ("got %s\n", buffer));
+				netbuf_delete(buf);
+
 			}
 			else
 			{
 				trace_printf("unable to allocate return data \n");
 			}
-			buf->p->tot_len = 16;
-			buf->p->len = 16;
-
-			netconn_send(conn, buf);
-			//LWIP_DEBUGF(LWIP_DBG_ON, ("got %s\n", buffer));
-			netbuf_delete(buf);
 
 		}
 	}

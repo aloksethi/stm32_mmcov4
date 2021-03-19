@@ -10,17 +10,21 @@
 
 //static const float LTC2991_SINGLE_ENDED_lsb = 3.05176E-04f;
 //! Typical differential LSB weight in volts
-static const float LTC2991_DIFFERENTIAL_lsb = 1.90735E-05f;
+//static const float LTC2991_DIFFERENTIAL_lsb = 1.90735E-05f;
 //! Typical VCC LSB weight in volts
-static const float LTC2991_VCC_lsb = 3.05176E-04f;
+//static const float LTC2991_VCC_lsb = 3.05176E-04f;
 //! Typical temperature LSB weight in degrees Celsius (and Kelvin).
 //! Used for internal temperature as well as remote diode temperature measurements.
 //static const float LTC2991_TEMPERATURE_lsb = 0.0625f;
 
 static const uint32_t LTC2991_SE_LSB_MUL = 2500; // se voltage measuremetns are in mV
-static const uint32_t LTC2991_DIFF_LSB_MUL = 25000; // diff current measuremetns are in uA. sense resistor is 0.1 ohm
+static const uint64_t LTC2991_DIFF_LSB_MUL = 25000000; // diff current measuremetns are in uA. sense resistor is 0.1 ohm
 static const uint8_t LTC2991_SE_LSB_RHSIFT = 13;
 static const uint8_t LTC2991_DIFF_LSB_RHSIFT = 17;
+
+QueueHandle_t g_sensor_queue_handle;
+static StaticQueue_t sensor_queue_ds;
+static uint8_t sensor_queue_storage_area[sizeof(sensor_data_t*)]; // send a pointer on the queue
 
 TaskHandle_t g_handle_sensor_task;
 sensor_data_t g_sensor_data;
@@ -201,56 +205,65 @@ static uint8_t i2c_sensor_config_u4(void)
 	return ret;
 }
 
-static void i2c_sensor_config(void)
+static uint8_t i2c_sensor_config(void)
 {
-	i2c_sensor_config_u2();
-	i2c_sensor_config_u3();
-	i2c_sensor_config_u4();
+	uint8_t ret = 0, ret1;
+	ret1 = i2c_sensor_config_u2();
+	ret |= ret1;
+
+	ret1 = i2c_sensor_config_u3();
+	ret |= ret1;
+
+	ret1 = i2c_sensor_config_u4();
+	ret |= ret1;
+
+	return ret;
 }
 
-static void code_to_voltage(uint8_t msb, uint8_t lsb, int32_t *val)
+static void code_to_voltage(uint8_t msb, uint8_t lsb, uint32_t *val)
 {
 	uint32_t voltage;
 	int8_t sign;
 	uint16_t code;
 
 	code = (uint16_t) (lsb | ((uint16_t) msb << 8));
+	code = code & 0x7fff; // data is 15 bit and 15th bit is the sign bit
 
 	if (code & (0x1 << 14))
 	{
-		code = (uint16_t) ((code ^ 0xFFFF) + 1); //! 1)Converts two's complement to binary
+		code = (uint16_t) ((code ^ 0x7FFF) + 1); //! 1)Converts two's complement to binary
 		sign = -1;
 	}
 	else
 	{
-		code = code & 0x3fff;
+		//code = code & 0x3fff;
 		sign = 1;
 	}
 	//trace_printf("V: sign = %d, code = %d, lsb = %d, msb = %d\n", sign, code,
 	//		lsb, msb);
 	voltage = ((uint32_t) code * LTC2991_SE_LSB_MUL) >> LTC2991_SE_LSB_RHSIFT;
 
-	*val = (uint32_t) (voltage & 0xffffffff) * sign;
+	*val = (uint32_t) (voltage & 0xffffffff);	// * sign;
 
 	return;
 }
 
-static void code_to_current(uint8_t msb, uint8_t lsb, int32_t *val)
+static void code_to_current(uint8_t msb, uint8_t lsb, uint32_t *val)
 {
 	uint64_t current;
 	int8_t sign;
 	uint16_t code;
 
 	code = (uint16_t) (lsb) | ((uint16_t) msb << 8);
-
+	code = code & 0x7fff; // data is 15 bit and 15th bit is the sign bit
 	if (code & (0x1 << 14))
 	{
-		code = (uint16_t) ((code ^ 0xFFFF) + 1); //! 1)Converts two's complement to binary
+		code = (uint16_t) ((code ^ 0x7FFF) + 1); //! 1)Converts two's complement to binary
 		sign = -1;
 	}
 	else
 	{
-		code = code & 0x3fff;
+		//code = code & 0x3fff;
 		sign = 1;
 	}
 	trace_printf("I sign = %d, code = %d, lsb = %d, msb = %d\n", sign, code,
@@ -259,20 +272,22 @@ static void code_to_current(uint8_t msb, uint8_t lsb, int32_t *val)
 	current = (uint64_t) code * LTC2991_DIFF_LSB_MUL;
 	current = current >> LTC2991_DIFF_LSB_RHSIFT;
 
-	*val = (uint32_t) (current & 0xffffffff) * sign;
+	*val = (uint32_t) (current & 0xffffffff); // * sign;
 
 	return;
 }
 
-static void i2c_sensor_u2_read_nomutex(sensor_data_t *op)
+static uint8_t i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 {
 	uint8_t status_h;
 	uint8_t ret1, ret = 0;
-	int32_t meas;
+	uint32_t meas;
 	uint8_t v2_msb, v2_lsb, v4_msb, v4_lsb, v6_msb, v6_lsb, v8_msb, v8_lsb;
 
+//	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U2,
+//	LTC2991_STATUS_HIGH_REG, &status_h);
 	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U2,
-	LTC2991_STATUS_HIGH_REG, &status_h);
+	LTC2991_STATUS_LOW_REG, &status_h);
 	ret = ret | ret1;
 
 	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U2,
@@ -315,6 +330,8 @@ static void i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 		code_to_current(v2_msb, v2_lsb, &meas);
 		op->current_1v0 = meas;
 	}
+	else
+		op->current_1v0 = 0;
 
 	if (status_h & LTC2991_V34_READY)
 	{
@@ -322,6 +339,8 @@ static void i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 
 		op->current_2v0 = meas;
 	}
+	else
+		op->current_2v0 = 0;
 
 	if (status_h & LTC2991_V56_READY)
 	{
@@ -329,6 +348,8 @@ static void i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 
 		op->current_3v0 = meas;
 	}
+	else
+		op->current_3v0 = 0;
 
 	if (status_h & LTC2991_V78_READY)
 	{
@@ -336,15 +357,17 @@ static void i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 
 		op->current_4v0 = meas;
 	}
+	else
+		op->current_4v0 = 0;
 
-	SENSOR_U2_ERROR: return;
+	SENSOR_U2_ERROR: return ret;
 }
 
-static void i2c_sensor_u3_read_nomutex(sensor_data_t *op)
+static uint8_t i2c_sensor_u3_read_nomutex(sensor_data_t *op)
 {
 	uint8_t status_l;
 	uint8_t ret1, ret = 0;
-	int32_t meas;
+	uint32_t meas;
 	uint8_t v1_msb, v1_lsb, v2_msb, v2_lsb, v3_msb, v3_lsb, v4_msb, v4_lsb;
 
 	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U3,
@@ -391,29 +414,37 @@ static void i2c_sensor_u3_read_nomutex(sensor_data_t *op)
 		code_to_voltage(v1_msb, v1_lsb, &meas);
 		op->voltage_1v0 = meas;
 	}
+	else
+		op->voltage_1v0 = 0;
 
 	if (status_l & LTC2991_V2_READY)
 	{
 		code_to_voltage(v2_msb, v2_lsb, &meas);
 		op->voltage_2v0 = meas;
 	}
+	else
+		op->voltage_2v0 = 0;
 
 	if (status_l & LTC2991_V3_READY)
 	{
 		code_to_voltage(v3_msb, v3_lsb, &meas);
 		op->voltage_3v0 = meas;
 	}
+	else
+		op->voltage_3v0 = 0;
 
 	if (status_l & LTC2991_V4_READY)
 	{
 		code_to_voltage(v4_msb, v4_lsb, &meas);
 		op->voltage_4v0 = meas;
 	}
+	else
+		op->voltage_4v0 = 0;
 
-	SENSOR_U3_ERROR: return;
+	SENSOR_U3_ERROR: return ret;
 }
 
-static void i2c_sensor_u4_read_nomutex(sensor_data_t *op)
+static uint8_t i2c_sensor_u4_read_nomutex(sensor_data_t *op)
 {
 	uint8_t status_l, status_h, msb, lsb, i5_msb, i5_lsb;
 	uint8_t ret1, ret = 0;
@@ -451,167 +482,61 @@ static void i2c_sensor_u4_read_nomutex(sensor_data_t *op)
 		code_to_voltage(msb, lsb, &meas);
 		op->voltage_5v0 = meas * 2; // double it
 	}
+	else
+		op->voltage_5v0 = 0;
 
-	if (status_h & LTC2991_V12_READY)
+//	if (status_h & LTC2991_V12_READY)
+	if (status_l & LTC2991_V12_READY)
 	{
 		code_to_current(i5_msb, i5_lsb, &meas);
 		op->current_5v0 = meas;
 	}
-	trace_printf("5vis:%d\n", op->voltage_5v0);
+	else
+		op->current_5v0 = 0;
 
-	SENSOR_U4_ERROR: return;
+	//trace_printf("5vis:%d\n", op->voltage_5v0);
+
+	SENSOR_U4_ERROR: return ret;
 }
 
-void i2c_sensor_read(void)
+static uint8_t i2c_sensor_read(void)
 {
+	uint8_t ret1, ret = 0;
+
 	if (xSemaphoreTake(g_mutex_i2c_op, portMAX_DELAY) == pdTRUE)
 	{
-		i2c_sensor_u2_read_nomutex(&g_sensor_data);
-		i2c_sensor_u3_read_nomutex(&g_sensor_data);
-		i2c_sensor_u4_read_nomutex(&g_sensor_data);
+		ret1 = i2c_sensor_u2_read_nomutex(&g_sensor_data);
+		ret = ret | ret1;
+
+		ret1 = i2c_sensor_u3_read_nomutex(&g_sensor_data);
+		ret = ret | ret1;
+
+		ret1 = i2c_sensor_u4_read_nomutex(&g_sensor_data);
+		ret = ret | ret1;
 
 		xSemaphoreGive(g_mutex_i2c_op);
 
 	}
 
-	return;
-}
-
-static HAL_StatusTypeDef i2c_sensor_meas_current(uint16_t addr, uint8_t msb_reg,
-		int32_t *op)
-{
-	HAL_StatusTypeDef ret1, ret2;
-	uint8_t msb, lsb;
-	uint16_t code;
-	float current;
-	int16_t sign;
-
-	ret1 = i2c_sensor_read_reg(addr, (uint8_t) (msb_reg + 1), &lsb);
-	ret2 = i2c_sensor_read_reg(addr, msb_reg, &msb);
-
-	if ((HAL_OK != ret1) || (HAL_OK != ret2))
-		return HAL_ERROR;
-
-	code = (uint16_t) (lsb | (msb << 8));
-
-	if (code & (0x1 << 14))
-	{
-		code = (uint16_t) ((code ^ 0xfFFF) + 1); //! 1)Converts two's complement to binary
-		sign = -1;
-	}
-	else
-	{
-		code = code & 0x3fff;
-		sign = 1;
-	}
-	//resistor is assumed to be 0.1, so instead of dividing, multiplying by 10
-	current = (float) (code * LTC2991_DIFFERENTIAL_lsb * sign
-			* SENSOR_CURR_SCALE * 10);
-	if (-1 == sign)
-		*op = (int32_t) (current - 0.5);
-	else
-		*op = (int32_t) (current + 0.5);
-
-	return ret1;
-}
-
-static HAL_StatusTypeDef i2c_sensor_I12_read(void)
-{
-	uint8_t data[2] =
-	{ 0, 0 };
-	uint8_t status_h;
-	uint16_t code;
-//	float temp;
-	float voltage; //, current;
-	int16_t sign;
-	HAL_StatusTypeDef ret1, ret2;
-	int32_t meas;
-
-	//ret1 = i2c_sensor_read_reg(LTC2991_I2C_ADDRESS_I12, LTC2991_STATUS_LOW_REG, &status_l);
-	ret2 = i2c_sensor_read_reg(LTC2991_I2C_ADDRESS_U2, LTC2991_STATUS_HIGH_REG,
-			&status_h);
-
-	if (HAL_OK != ret2)
-		goto SENSOR_I12_ERROR;
-
-	if (status_h & LTC2991_VCC_READY)
-	{
-		//read vcc
-		ret1 = i2c_sensor_read_reg(LTC2991_I2C_ADDRESS_U2, LTC2991_Vcc_LSB_REG,
-				&data[0]);
-		ret2 = i2c_sensor_read_reg(LTC2991_I2C_ADDRESS_U2, LTC2991_Vcc_MSB_REG,
-				&data[1]);
-		if ((HAL_OK != ret1) || (HAL_OK != ret2))
-			goto SENSOR_I12_ERROR;
-
-		code = (uint16_t) (data[0] | (data[1] << 8));
-
-		if (code & (0x1 << 14))
-		{
-			trace_printf("vcc has a negative sign:::\n");
-			code = (uint16_t) ((code ^ 0x7FFF) + 1); //! 1)Converts two's complement to binary
-			sign = -1;
-		}
-		else
-		{
-			code = code & 0x3fff;
-			sign = 1;
-		}
-		voltage = (float) ((code * LTC2991_VCC_lsb * sign + 2.5)
-				* SENSOR_VOLT_SCALE); //! 2) Convert code to voltage form differential lsb
-		if (-1 == sign)
-			trace_printf("op->voltage_vcc = %f\n", (int) (voltage - 0.5));
-		else
-			trace_printf("op->voltage_vcc = %f\n", (int) (voltage + 0.5));
-	}
-
-	if (status_h & LTC2991_V12_READY)
-	{
-		ret1 = i2c_sensor_meas_current(LTC2991_I2C_ADDRESS_U2,
-		LTC2991_V2_MSB_REG, &meas);
-		if (HAL_OK != ret1)
-			goto SENSOR_I12_ERROR;
-		trace_printf("op->current_1v0 = %d uA\n", meas);
-	}
-
-	if (status_h & LTC2991_V34_READY)
-	{
-		ret1 = i2c_sensor_meas_current(LTC2991_I2C_ADDRESS_U2,
-		LTC2991_V4_MSB_REG, &meas);
-		if (HAL_OK != ret1)
-			goto SENSOR_I12_ERROR;
-		trace_printf("op->current_2v0 = %d uA\n", meas);
-	}
-
-	if (status_h & LTC2991_V56_READY)
-	{
-		ret1 = i2c_sensor_meas_current(LTC2991_I2C_ADDRESS_U2,
-		LTC2991_V6_MSB_REG, &meas);
-		if (HAL_OK != ret1)
-			goto SENSOR_I12_ERROR;
-		trace_printf("op->current_3v0 = %d uA\n", meas);
-	}
-
-	if (status_h & LTC2991_V78_READY)
-	{
-		ret1 = i2c_sensor_meas_current(LTC2991_I2C_ADDRESS_U2,
-		LTC2991_V8_MSB_REG, &meas);
-		if (HAL_OK != ret1)
-			goto SENSOR_I12_ERROR;
-		trace_printf("op->current_4v0 = %d uA\n", meas);
-	}
-
-	return HAL_OK;
-	SENSOR_I12_ERROR: return HAL_ERROR;
+	return ret;
 }
 
 void vSensorHandlerTask(void *pvParameters)
 {
-
+	static uint8_t sensor_not_configed = 1;
+	uint8_t ret = 0;
 	while (1)
 	{
-		//uint8_t ret1 = 0, ret2 = 0, ret3 = 0;
-		i2c_sensor_config();
+//		1 = 0, ret2 = 0, ret3 = 0;
+		if (sensor_not_configed)
+		{
+			sensor_not_configed = i2c_sensor_config();
+			if (sensor_not_configed)
+			{
+				vTaskDelay(1000 / portTICK_PERIOD_MS);
+				continue;
+			}
+		}
 
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
@@ -621,18 +546,26 @@ void vSensorHandlerTask(void *pvParameters)
 		//		}
 		//		else
 		//		{
-		i2c_sensor_read();
-		trace_printf("Voltages: S1:%05d, S2:%05d, S3:%05d, S4:%05d, S5:%05d\n",
-				g_sensor_data.voltage_1v0, g_sensor_data.voltage_2v0,
-				g_sensor_data.voltage_3v0, g_sensor_data.voltage_4v0,
-				g_sensor_data.voltage_5v0);
-
-		trace_printf("Currents: S1:%d, S2:%d, S3:%d, S4:%d, S5:%d\n",
-				g_sensor_data.current_1v0, g_sensor_data.current_2v0,
-				g_sensor_data.current_3v0, g_sensor_data.current_4v0,
-				g_sensor_data.current_5v0);
+		ret = i2c_sensor_read();
+		if (ret)
+		{
+			sensor_not_configed = 1;
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+			continue;
+		}
+		unsigned long ptr_to_sensor_data = &g_sensor_data;
+		xQueueOverwrite(g_sensor_queue_handle, (void* )&ptr_to_sensor_data);
+//		trace_printf("Voltages: S1:%05d, S2:%05d, S3:%05d, S4:%05d, S5:%05d\n",
+//				g_sensor_data.voltage_1v0, g_sensor_data.voltage_2v0,
+//				g_sensor_data.voltage_3v0, g_sensor_data.voltage_4v0,
+//				g_sensor_data.voltage_5v0);
+//
+//		trace_printf("Currents: S1:%d, S2:%d, S3:%d, S4:%d, S5:%d\n",
+//				g_sensor_data.current_1v0, g_sensor_data.current_2v0,
+//				g_sensor_data.current_3v0, g_sensor_data.current_4v0,
+//				g_sensor_data.current_5v0);
 		//		}
-		i2c_sensor_I12_read();
+		//i2c_sensor_I12_read();
 	}
 	return;
 }
@@ -647,6 +580,13 @@ void vStartSensorTask(UBaseType_t uxPriority)
 	if (xReturned != pdPASS)
 	{
 		trace_printf("failed to create sensor handling task\n");
+		Error_Handler();
+	}
+	g_sensor_queue_handle = xQueueCreateStatic(1, sizeof(sensor_data_t*),
+			sensor_queue_storage_area, &sensor_queue_ds);
+	if ( NULL == g_sensor_queue_handle)
+	{
+		trace_printf("failed to create the sensor queue\n");
 		Error_Handler();
 	}
 	return;

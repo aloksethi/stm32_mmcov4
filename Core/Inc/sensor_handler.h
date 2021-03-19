@@ -9,6 +9,7 @@
 #define INC_SENSOR_HANDLER_H_
 
 extern TaskHandle_t g_handle_sensor_task;
+extern QueueHandle_t g_sensor_queue_handle;
 
 /*
  * U2 meas current, v1-2 ->sup1, v3-4->sup2, v5-6->sup3, v7-8->sup4
@@ -52,10 +53,15 @@ extern TaskHandle_t g_handle_sensor_task;
 #define LTC2991_Vcc_MSB_REG                 0x1C    //!< Vcc MSB
 #define LTC2991_Vcc_LSB_REG                 0x1D    //!< Vcc LSB
 
-#define LTC2991_V78_READY					0x80
-#define LTC2991_V56_READY					0x40
-#define LTC2991_V34_READY					0x20
-#define LTC2991_V12_READY					0x10
+//#define LTC2991_V78_READY					0x80
+//#define LTC2991_V56_READY					0x40
+//#define LTC2991_V34_READY					0x20
+//#define LTC2991_V12_READY					0x10
+
+#define LTC2991_V78_READY					0x40
+#define LTC2991_V56_READY					0x10
+#define LTC2991_V34_READY					0x04
+#define LTC2991_V12_READY					0x01
 
 #define LTC2991_V1_READY					0x01
 #define LTC2991_V2_READY					0x02
@@ -123,19 +129,18 @@ extern TaskHandle_t g_handle_sensor_task;
 #define LTC2991_INT_KELVIN_ENABLE             0x04 //!< Enable internal temperature for Kelvin. Otherwise, Celsius.
 /*!@} */
 
-typedef struct
+typedef struct __attribute__((packed))
 {
-	int32_t voltage_1v0;	//scaled by 10
-	int32_t voltage_2v0; 	// scaled by 10
-	int32_t voltage_3v0; 	// scaled by 10
-	int32_t voltage_4v0; 	// scaled by 10
-	int32_t voltage_5v0;	//scaled by 10
-	int32_t voltage_vcc;	//scaled by 10
-	int32_t current_1v0; 	//scaled to give uA
-	int32_t current_2v0; 	//scaled to give uA
-	int32_t current_3v0; 	//scaled to give uA
-	int32_t current_4v0; 	//scaled to give uA
-	int32_t current_5v0; 	//scaled to give uA
+	uint32_t voltage_1v0;	//scaled by 10
+	uint32_t voltage_2v0; 	// scaled by 10
+	uint32_t voltage_3v0; 	// scaled by 10
+	uint32_t voltage_4v0; 	// scaled by 10
+	uint32_t voltage_5v0;	//scaled by 10
+	uint32_t current_1v0; 	//scaled to give uA
+	uint32_t current_2v0; 	//scaled to give uA
+	uint32_t current_3v0; 	//scaled to give uA
+	uint32_t current_4v0; 	//scaled to give uA
+	uint32_t current_5v0; 	//scaled to give uA
 } sensor_data_t;
 
 #endif /* INC_SENSOR_HANDLER_H_ */
