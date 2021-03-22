@@ -172,15 +172,14 @@ static void pc_program_bits(uint8_t ic_id, reg_t *tmp_reg)
 	trace_printf("num_data_bytes:%d, reg_num:%d\n", num_data_bytes, reg_num);
 	// shift in data fist,
 	// lsb goes in first
-	for (i = num_data_bytes; i > 0; i--)
+	for (i = 0; i < num_data_bytes; i++)
 	{
 		/*
 		 * max index 9, min idex 0, last data is saved at G_STORAGE_FOR_ONE_REG_BYTES-1
 		 * i.e., data for hw bits b7..b0 is saved at reg_val[9], b8...b15 is at reg_val[8]
 		 * and so on. data for b72..b79 will be at reg_val[0]
 		 */
-		tmp_data =
-				tmp_reg->reg_val[(G_STORAGE_FOR_ONE_REG_BYTES - 1) - (i - 1)];
+		tmp_data = tmp_reg->reg_val[(G_STORAGE_FOR_ONE_REG_BYTES - 1) - (i)];
 		for (ii = 0; ii < 8; ii++)
 		{
 			uint8_t val;
