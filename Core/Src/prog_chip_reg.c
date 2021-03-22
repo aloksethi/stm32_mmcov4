@@ -148,7 +148,8 @@ static void board_send_le_ic2(void)
 }
 
 /*
- * reg_num is the register number-->6bit in mmcov4, 5 bit in older chips
+ * reg_num is the register number-->10bit in mmcov4, 5 bit in older chips.
+ * a9...a0, a0 to a4 are for LE1 to LE31, a5...a9 are for LE32 to LE62
  * buff-->pointer to the raw hex data, had to change it from uint64_t
  * cause it seems that there are more than 3 shift registers in cascade
  * num_data_bytes-->num of bytes, should be multiple of 5 as one register is 5 bytes
@@ -162,16 +163,25 @@ static void pc_program_bits(uint8_t ic_id, reg_t *tmp_reg)
 	uint8_t tot_bits = tmp_reg->cascade * G_LENGTH_ONE_REG;
 	uint8_t bits_txmtd = 0;
 	uint8_t num_data_bytes;
+	uint8_t reg_num = tmp_reg->reg_id;
+	uint8_t high_reg_num, low_reg_num;
 
 	num_data_bytes = tmp_reg->cascade * G_LENGTH_ONE_REG >> 3;
 	num_data_bytes += (tmp_reg->cascade % 2);
 
+	trace_printf("num_data_bytes:%d, reg_num:%d\n", num_data_bytes, reg_num);
 	// shift in data fist,
 	// lsb goes in first
 	for (i = num_data_bytes; i > 0; i--)
 	{
-		tmp_data = tmp_reg->reg_val[i - 1];
-		for (ii = 0; ii < sizeof(uint8_t); ii++)
+		/*
+		 * max index 9, min idex 0, last data is saved at G_STORAGE_FOR_ONE_REG_BYTES-1
+		 * i.e., data for hw bits b7..b0 is saved at reg_val[9], b8...b15 is at reg_val[8]
+		 * and so on. data for b72..b79 will be at reg_val[0]
+		 */
+		tmp_data =
+				tmp_reg->reg_val[(G_STORAGE_FOR_ONE_REG_BYTES - 1) - (i - 1)];
+		for (ii = 0; ii < 8; ii++)
 		{
 			uint8_t val;
 
@@ -183,6 +193,38 @@ static void pc_program_bits(uint8_t ic_id, reg_t *tmp_reg)
 				break;
 		}
 	}
+	// send address, as there are two address decoders, lower decoder handles regs 0 to 31 and
+	// higher one handles regs 32 to 62. latch 0 is unused on both
+	// ad0 goes first and ad9 goes last
+	if (reg_num > 31)
+	{
+		high_reg_num = reg_num - 31;
+		low_reg_num = 0;
+	}
+	else
+	{
+		high_reg_num = 0;
+		low_reg_num = reg_num;
+	}
+
+	for (ii = 0; ii < 5; ii++)
+	{
+		uint8_t val;
+
+		val = (low_reg_num & 0x1 << ii) >> ii;
+		board_set_reg_data(val);
+		board_send_reg_clock();
+	}
+
+	for (ii = 0; ii < 5; ii++)
+	{
+		uint8_t val;
+
+		val = (high_reg_num & 0x1 << ii) >> ii;
+		board_set_reg_data(val);
+		board_send_reg_clock();
+	}
+
 	//send the LE after some extra delay
 	for (i = 0; i < 30; i++)
 		;
@@ -207,7 +249,7 @@ void vChipHandlerTask(void *pvParameters)
 	while (1)
 	{
 		if (xQueueReceive(g_pc_queue_handle, &pc_queue_local_copy,
-				portMAX_DELAY) == pdPASS)
+		portMAX_DELAY) == pdPASS)
 		{
 			if ((pc_queue_local_copy.ic_id == 0))
 			{
@@ -239,7 +281,8 @@ void vChipHandlerTask(void *pvParameters)
 				reg_t *local_ptr;
 				uint8_t i;
 
-				if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
+				if ( xSemaphoreTake(pc_mutex_handle,
+						portMAX_DELAY) == pdTRUE)
 				{
 					board_blue_led_toggle();
 
@@ -262,7 +305,8 @@ void vChipHandlerTask(void *pvParameters)
 				reg_t *local_ptr;
 				uint8_t i;
 
-				if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
+				if ( xSemaphoreTake(pc_mutex_handle,
+						portMAX_DELAY) == pdTRUE)
 				{
 					board_blue_led_toggle();
 
@@ -285,7 +329,8 @@ void vChipHandlerTask(void *pvParameters)
 				reg_t *local_ptr;
 				uint8_t i;
 
-				if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
+				if ( xSemaphoreTake(pc_mutex_handle,
+						portMAX_DELAY) == pdTRUE)
 				{
 					board_blue_led_toggle();
 
@@ -327,8 +372,9 @@ void vStartChipRegTask(UBaseType_t uxPriority)
 		Error_Handler();
 	}
 	/* Spawn the task. */
-	xReturned = xTaskCreate(vChipHandlerTask, "CHIP", CHIP_REG_STACK_SIZE, NULL,
-			uxPriority, (TaskHandle_t*) &g_handle_chip_reg_task);
+	xReturned = xTaskCreate(vChipHandlerTask, "CHIP",
+	CHIP_REG_STACK_SIZE, NULL, uxPriority,
+			(TaskHandle_t*) &g_handle_chip_reg_task);
 	if (xReturned != pdPASS)
 	{
 		trace_printf("failed to create the chip register handling task\n");
