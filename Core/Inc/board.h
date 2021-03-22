@@ -17,7 +17,7 @@ extern UART_HandleTypeDef g_huart3;
 extern SemaphoreHandle_t g_mutex_i2c_op;
 extern SemaphoreHandle_t g_mutex_spi_op;
 
-#define CHIP_CLK_DELAY				20000
+#define CHIP_CLK_DELAY				500
 
 #define SYNTH_POW_Pin				GPIO_PIN_7
 #define SYNTH_POW_Port				GPIOC
