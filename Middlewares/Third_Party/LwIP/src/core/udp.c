@@ -447,7 +447,7 @@ void udp_input(struct pbuf *p, struct netif *inp)
 		}
 		else
 		{
-			LWIP_DEBUGF((UDP_DEBUG | LWIP_DBG_ON) | LWIP_DBG_TRACE,
+			LWIP_DEBUGF((UDP_DEBUG ) | LWIP_DBG_TRACE,
 					("udp_input: not for us.\n"));
 
 #if LWIP_ICMP || LWIP_ICMP6
