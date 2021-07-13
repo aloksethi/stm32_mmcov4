@@ -160,7 +160,7 @@ static uint16_t handle_command(mlab_data_t *raw_data_p)
 		uint32_t val;
 
 		trace_printf("command: synth_power \n");
-		val = (uint32_t) (raw_data_p->data); // make power value out of pointer
+		val = (uint32_t) (raw_data_p->data[0]); // make power value out of pointer
 		if (val)
 			board_synth_power_on();
 		else
@@ -181,7 +181,7 @@ static uint16_t handle_command(mlab_data_t *raw_data_p)
 		uint32_t val;
 
 		trace_printf("command: 3V3_power \n");
-		val = (uint32_t) (raw_data_p->data); // make power value out of pointer
+		val = (uint32_t) (raw_data_p->data[0]); // make power value out of pointer
 		if (val)
 			board_3v3_power_on();
 		else
@@ -227,6 +227,17 @@ static uint16_t handle_command(mlab_data_t *raw_data_p)
 		}
 		else
 			data_to_return = 0;
+
+		break;
+	}
+
+	case G_UC_LO_SWITCH:
+	{
+		uint32_t val;
+
+		trace_printf("command: set LO switch \n");
+		val = (uint32_t) (raw_data_p->data[0]); // make LO switch value out of pointer
+		board_set_lo_switch((val & 0x3)); // only 2 bits are used
 
 		break;
 	}
@@ -333,6 +344,7 @@ static uint8_t sanity_check(mlab_data_t *raw_data_p)
 
 		}
 	}
+
 	sane = 1;
 	return sane;
 }
