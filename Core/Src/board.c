@@ -180,7 +180,7 @@ static void board_en_pins_init(void)
 	HAL_GPIO_WritePin(EN_POW_BOARD_Port, EN_POW_BOARD_Pin, GPIO_PIN_RESET); // without this there is no control
 
 	HAL_GPIO_WritePin(SYNTH_POW_Port, SYNTH_POW_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(EN_3V3_POW_Port, EN_3V3_POW_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(EN_3V3_POW_Port, EN_3V3_POW_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LO_SW1_Port, LO_SW1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LO_SW2_Port, LO_SW2_Pin, GPIO_PIN_RESET);
 }
