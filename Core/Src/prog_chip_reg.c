@@ -47,6 +47,7 @@ void pc_set_curr_value(uint8_t ic_id, reg_t *local_copy)
 	if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
 	{
 		uint8_t reg_id = local_copy->reg_id;
+		pc_curr_reg_dbase[ic_id - 1][reg_id].reg_id = reg_id;
 		pc_curr_reg_dbase[ic_id - 1][reg_id].cascade = local_copy->cascade;
 		memcpy((void*) pc_curr_reg_dbase[ic_id - 1][reg_id].reg_val,
 				(const void*) local_copy->reg_val, sizeof(local_copy->reg_val));
@@ -61,6 +62,7 @@ void pc_save_default_value(uint8_t ic_id, reg_t *local_copy)
 	if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
 	{
 		uint8_t reg_id = local_copy->reg_id;
+		pc_dflt_reg_dbase[ic_id - 1][reg_id].reg_id = reg_id;
 		pc_dflt_reg_dbase[ic_id - 1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void*) pc_dflt_reg_dbase[ic_id - 1][reg_id].reg_val,
@@ -76,6 +78,7 @@ void pc_save_mini_value(uint8_t ic_id, reg_t *local_copy)
 	if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
 	{
 		uint8_t reg_id = local_copy->reg_id;
+		pc_mini_reg_dbase[ic_id - 1][reg_id].reg_id = reg_id;
 		pc_mini_reg_dbase[ic_id - 1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void*) pc_mini_reg_dbase[ic_id - 1][reg_id].reg_val,
@@ -91,6 +94,7 @@ void pc_save_maxi_value(uint8_t ic_id, reg_t *local_copy)
 	if ( xSemaphoreTake( pc_mutex_handle, portMAX_DELAY ) == pdTRUE)
 	{
 		uint8_t reg_id = local_copy->reg_id;
+		pc_maxi_reg_dbase[ic_id - 1][reg_id].reg_id = reg_id;
 		pc_maxi_reg_dbase[ic_id - 1][reg_id].cascade = local_copy->cascade;
 		trace_printf("size is %d\n", sizeof(local_copy->reg_val));
 		memcpy((void*) pc_maxi_reg_dbase[ic_id - 1][reg_id].reg_val,
@@ -169,7 +173,8 @@ static void pc_program_bits(uint8_t ic_id, reg_t *tmp_reg)
 	num_data_bytes = tmp_reg->cascade * G_LENGTH_ONE_REG >> 3;
 	num_data_bytes += (tmp_reg->cascade % 2);
 
-	trace_printf("num_data_bytes:%d, reg_num:%d\n", num_data_bytes, reg_num);
+	trace_printf("num_data_bytes:%d, reg_num:%d, ic_id:%d\n", num_data_bytes,
+			reg_num, ic_id);
 	// shift in data fist,
 	// lsb goes in first
 	for (i = 0; i < num_data_bytes; i++)
@@ -288,6 +293,8 @@ void vChipHandlerTask(void *pvParameters)
 					for (i = 0; i < G_MAX_NUM_REGS; i++)
 					{
 						local_ptr = &(pc_dflt_reg_dbase[ic_id - 1][i]);
+						for (int del = 0; del < 1000; del++)
+							;
 						pc_program_bits(pc_queue_local_copy.ic_id, local_ptr);
 					}
 					board_blue_led_toggle();
