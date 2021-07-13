@@ -29,6 +29,21 @@ static uint8_t sensor_queue_storage_area[sizeof(sensor_data_t*)]; // send a poin
 TaskHandle_t g_handle_sensor_task;
 sensor_data_t g_sensor_data;
 
+static uint8_t is_all_zero(void)
+{
+	int i;
+	uint8_t *dptr = (uint8_t*) (&g_sensor_data);
+
+	for (i = 0; i < sizeof(sensor_data_t); i++)
+	{
+		if (*dptr)
+		{
+			return 0;
+		}
+		dptr++;
+	}
+	return 1;
+}
 static uint8_t i2c_sensor_read_reg_nomutex(uint16_t addr, uint8_t reg,
 		uint8_t *data)
 {
@@ -283,7 +298,7 @@ static uint8_t i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 	uint8_t ret1, ret = 0;
 	uint32_t meas;
 	uint8_t v2_msb, v2_lsb, v4_msb, v4_lsb, v6_msb, v6_lsb, v8_msb, v8_lsb;
-
+	board_red_led_toggle();
 //	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U2,
 //	LTC2991_STATUS_HIGH_REG, &status_h);
 	ret1 = i2c_sensor_read_reg_nomutex(LTC2991_I2C_ADDRESS_U2,
@@ -360,6 +375,7 @@ static uint8_t i2c_sensor_u2_read_nomutex(sensor_data_t *op)
 	else
 		op->current_4v0 = 0;
 
+	board_red_led_toggle();
 	SENSOR_U2_ERROR: return ret;
 }
 
@@ -555,6 +571,10 @@ void vSensorHandlerTask(void *pvParameters)
 		}
 		unsigned long ptr_to_sensor_data = &g_sensor_data;
 		xQueueOverwrite(g_sensor_queue_handle, (void* )&ptr_to_sensor_data);
+		if (is_all_zero())
+		{
+			sensor_not_configed = 1;
+		}
 //		trace_printf("Voltages: S1:%05d, S2:%05d, S3:%05d, S4:%05d, S5:%05d\n",
 //				g_sensor_data.voltage_1v0, g_sensor_data.voltage_2v0,
 //				g_sensor_data.voltage_3v0, g_sensor_data.voltage_4v0,
