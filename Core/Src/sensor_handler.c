@@ -55,7 +55,7 @@ static uint8_t i2c_sensor_read_reg_nomutex(uint16_t addr, uint8_t reg,
 
 	if ((HAL_OK != ret1) || (HAL_OK != ret2))
 	{
-		trace_printf("failed to read sensor %x:%x \n", ret1, ret2);
+		//trace_printf("failed to read sensor %x:%x \n", ret1, ret2);
 		ret = -1;
 	}
 	return ret;
@@ -75,7 +75,7 @@ static uint8_t i2c_sensor_read_reg(uint16_t addr, uint8_t reg, uint8_t *data)
 
 	if ((HAL_OK != ret1) || (HAL_OK != ret2))
 	{
-		trace_printf("failed to read sensor %x:%x \n", ret1, ret2);
+		//trace_printf("failed to read sensor %x:%x \n", ret1, ret2);
 		ret = -1;
 	}
 	return ret;
@@ -92,7 +92,7 @@ static uint8_t i2c_sensor_set_reg(uint16_t addr, uint8_t *data, uint8_t size)
 	}
 	if (HAL_OK != ret1)
 	{
-		trace_printf("failed to set sensor %x \n", ret1);
+		//	trace_printf("failed to set sensor %x \n", ret1);
 		ret = -1;
 	}
 	return ret;
@@ -111,7 +111,7 @@ static uint8_t i2c_sensor_config_u2(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U2, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR U2 CONFIG V1234 FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR U2 CONFIG V1234 FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -122,7 +122,7 @@ static uint8_t i2c_sensor_config_u2(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U2, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR U2 CONFIG V5678 FAILED : %d\n", ret);
+		//	trace_printf("I2C SENSOR U2 CONFIG V5678 FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -132,7 +132,7 @@ static uint8_t i2c_sensor_config_u2(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U2, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG U2 CH_EN FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG U2 CH_EN FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -141,7 +141,7 @@ static uint8_t i2c_sensor_config_u2(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U2, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
 		return ret;
 	}
 	return ret;
@@ -158,7 +158,7 @@ static uint8_t i2c_sensor_config_u3(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U3, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR U3 CONFIG V1234 FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR U3 CONFIG V1234 FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static uint8_t i2c_sensor_config_u3(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U3, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG U3 CH_EN FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG U3 CH_EN FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -177,7 +177,7 @@ static uint8_t i2c_sensor_config_u3(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U3, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
 		return ret;
 	}
 	return ret;
@@ -195,7 +195,7 @@ static uint8_t i2c_sensor_config_u4(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U4, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR U4 CONFIG V1234 FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR U4 CONFIG V1234 FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -205,7 +205,7 @@ static uint8_t i2c_sensor_config_u4(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U4, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG U4 CH_EN FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG U4 CH_EN FAILED : %d\n", ret);
 		return ret;
 	}
 
@@ -214,7 +214,7 @@ static uint8_t i2c_sensor_config_u4(void)
 	ret = i2c_sensor_set_reg(LTC2991_I2C_ADDRESS_U4, &data[0], 2);
 	if (ret)
 	{
-		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
+//		trace_printf("I2C SENSOR CONFIG repeat mode FAILED : %d\n", ret);
 		return ret;
 	}
 	return ret;
