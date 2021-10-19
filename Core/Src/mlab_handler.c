@@ -165,7 +165,7 @@ static uint16_t handle_command(mlab_data_t *raw_data_p)
 		uint32_t val;
 
 		trace_printf("command: synth_power \n");
-		val = (uint32_t) (raw_data_p->data[0]); // make power value out of pointer
+		val = (uint8_t) (raw_data_p->data[0]); // make power value out of pointer
 		if (val)
 			board_synth_power_on();
 		else
@@ -186,7 +186,9 @@ static uint16_t handle_command(mlab_data_t *raw_data_p)
 		uint32_t val;
 
 		trace_printf("command: 3V3_power \n");
-		val = (uint32_t) (raw_data_p->data[0]); // make power value out of pointer
+		// sender is sending only one byte, by using uint32 more other garbage values are alos used for getting
+		// the value of 'val'
+		val = (uint8_t) (raw_data_p->data[0]); // make power value out of pointer
 		if (val)
 			board_3v3_power_on();
 		else
