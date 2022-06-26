@@ -206,7 +206,7 @@ static void board_gpio_init(void)
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(
 	GPIOB,
-			GPIO_PIN_1 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | LED_RED_Pin
+			GPIO_PIN_1 | GPIO_PIN_10 | GPIO_PIN_12 | LED_RED_Pin
 					| GPIO_PIN_15 | GPIO_PIN_4 | LED_BLUE_Pin | LED_GREEN_Pin
 					| GPIO_PIN_8, GPIO_PIN_RESET);
 
@@ -277,13 +277,20 @@ static void board_gpio_init(void)
 	/*Configure GPIO pins : PB1 PB10 PB11 PB12
 	 LD3_Pin PB15 PB4 LED_BLUE_Pin
 	 PB8 */
-	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12
+	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_10 |  GPIO_PIN_12
 			| LED_RED_Pin | GPIO_PIN_15 | GPIO_PIN_4 | LED_BLUE_Pin
 			| LED_GREEN_Pin | GPIO_PIN_8;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+
+	//GPIO_InitStruct.Pin = SYNTH_NSS_Pin;
+	//GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	//GPIO_InitStruct.Pull = GPIO_NOPULL;
+	//HAL_GPIO_Init(SYNTH_NSS_Port, &GPIO_InitStruct);
+
 
 	/*Configure GPIO pins : PG0 PG1 PG3 PG4
 	 PG5 PG8 PG9 PG10

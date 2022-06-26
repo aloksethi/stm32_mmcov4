@@ -18,7 +18,9 @@ extern SemaphoreHandle_t g_mutex_i2c_op;
 extern SemaphoreHandle_t g_mutex_spi_op;
 
 #define CHIP_CLK_DELAY				500
-
+//nss pin is under software control, rest are configed in HAL_SPI_MspInit
+#define SYNTH_NSS_Pin				GPIO_PIN_11
+#define SYNTH_NSS_Port				GPIOB
 #define SYNTH_POW_Pin				GPIO_PIN_7
 #define SYNTH_POW_Port				GPIOC
 #define EN_3V3_POW_Pin				GPIO_PIN_1
